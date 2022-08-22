@@ -72,13 +72,13 @@ Goal : delete the user `carlos` by accessing the admin panel
 - go to `/login` , login with your credentials `wiener : peter`
 - update your email , you will find that your account info are exist in the response
 
-![](.\access-control_img\1_1.png)
+![](./access-control_img/1_1.png)
 
 
 
 - send the request to burp repeater and add `"roleid" : 2` to the request
 
-![](.\access-control_img\1_2.png)
+![](./access-control_img/1_2.png)
 
 
 
