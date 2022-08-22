@@ -49,6 +49,44 @@ if (isAdmin) {
 ------
 
 
+### [User role controlled by request parameter](https://portswigger.net/web-security/access-control/lab-user-role-controlled-by-request-parameter)
+
+Goal : delete the user `carlos` by accessing the admin panel
+
+- go to `/login` , login with your credentials `wiener : peter`
+- modify `Admin` in the cookies from `false` to `true`
+- go to `/admin`  and delete `carlos`
+
+
+
+
+
+------
+
+
+
+### [User role can be modified in user profile](https://portswigger.net/web-security/access-control/lab-user-role-can-be-modified-in-user-profile)
+
+Goal : delete the user `carlos` by accessing the admin panel
+
+- go to `/login` , login with your credentials `wiener : peter`
+- update your email , you will find that your account info are exist in the response
+
+![](.\access-control_img\1_1.png)
+
+
+
+- send the request to burp repeater and add `"roleid" : 2` to the request
+
+![](.\access-control_img\1_2.png)
+
+
+
+- go to `/admin`  and delete `carlos`
+
+
+
+------
 
 
 
