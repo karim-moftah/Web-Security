@@ -90,3 +90,40 @@ Goal : delete the user `carlos` by accessing the admin panel
 
 
 
+### [User ID controlled by request parameter](https://portswigger.net/web-security/access-control/lab-user-id-controlled-by-request-parameter)
+
+Goal : obtain the API key for the user `carlos` and submit it as the solution.
+
+- go to `/login` , login with your credentials `wiener : peter`
+- click `My account`  , notice that `id` parameter is `?id=wiener `
+- change `wiener` to `carlos`
+
+
+
+<img src="./access-control_img/4_1.png" style="zoom:80%;" />
+
+
+
+------
+
+
+
+### [User ID controlled by request parameter, with unpredictable user IDs](https://portswigger.net/web-security/access-control/lab-user-id-controlled-by-request-parameter-with-unpredictable-user-ids)
+
+Goal : find the GUID for `carlos`, then submit his API key as the solution.
+
+- go to `/login` , login with your credentials `wiener : peter`
+- click `My account`  , notice that `id` parameter
+
+```
+/my-account?id=9afc9f90-2dc9-443d-b6e4-2bd1b5c6a2a5
+```
+
+- return to home page ,open any post that `carlos` posted and get his GUID from the url
+- go to `my-account` and change your GUID with carlos 's GUID
+
+<img src="./access-control_img/5_1.png" style="zoom:60%;" />
+
+
+
+------
