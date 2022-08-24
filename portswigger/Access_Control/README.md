@@ -127,3 +127,47 @@ Goal : find the GUID for `carlos`, then submit his API key as the solution.
 
 
 ------
+
+
+
+
+
+
+
+### [User ID controlled by request parameter with data leakage in redirect](https://portswigger.net/web-security/access-control/lab-user-id-controlled-by-request-parameter-with-data-leakage-in-redirect)
+
+Goal : obtain the API key for the user `carlos` and submit it as the solution.
+
+- go to `/login` , login with your credentials `wiener : peter`
+- click `My account`  , notice that `id` parameter
+- change value of `id` to `carlos` , you will be redirected to the `login` page but `carlos`'s information will be exposed in the response
+
+ <img src="./access-control_img/6_1.png"  />
+
+
+
+
+
+------
+
+
+
+### [User ID controlled by request parameter with password disclosure](https://portswigger.net/web-security/access-control/lab-user-id-controlled-by-request-parameter-with-password-disclosure)
+
+Goal : retrieve the administrator's password, then use it to delete `carlos`.
+
+- go to `/login` , login with your credentials `wiener : peter`
+- click `My account`  , notice that `id` parameter 
+- change `id ` to `administrator` , change `type` in the `input` from `password` to `text` to see the password in clear text
+
+![](./access-control_img/7_1.png)
+
+
+
+- login with `administrator` account ,go to `admin panel` and delete `carlos`'s account
+
+
+
+
+
+------
