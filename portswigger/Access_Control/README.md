@@ -171,3 +171,67 @@ Goal : retrieve the administrator's password, then use it to delete `carlos`.
 
 
 ------
+
+
+
+
+
+### [Insecure direct object references](https://portswigger.net/web-security/access-control/lab-insecure-direct-object-references)
+
+Goal : find the password for the user `carlos`, and log into their account.
+
+- go to `Live chat` and send any message
+
+- click `view transcript` to download a txt file with your chat
+
+- view it in burp and you will see that it send `GET` to `/download-transcript/2.txt`
+
+  ```http
+  GET /download-transcript/2.txt HTTP/1.1
+  ```
+
+- send the request to burp repeater and change `2.txt` to `1.txt` to see `carlos` 's chat
+
+ ![](./access-control_img/8_1.png)
+
+
+
+- login with `carlos` account
+
+
+
+
+
+------
+
+
+
+### [Method-based access control can be circumvented](https://portswigger.net/web-security/access-control/lab-method-based-access-control-can-be-circumvented)
+
+Goal : exploit the flawed access controls to promote yourself to become an administrator.
+
+- go to `/login` , login with your admin credentials `administrator:admin`.
+- go to the admin panel and downgrade `wiener`  , send the request to burp repeater
+
+![](./access-control_img/3_1.png)
+
+
+
+- logout and login with your credentials `wiener : peter`
+- from burp repeater change the method from `POST` to `GET`
+
+
+
+![](./access-control_img/3_2.png)
+
+
+
+- add username parameter and the action to the request
+
+![](./access-control_img/3_3.png)
+
+
+
+
+
+------
