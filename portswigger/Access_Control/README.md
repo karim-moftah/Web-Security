@@ -235,3 +235,51 @@ Goal : exploit the flawed access controls to promote yourself to become an admin
 
 
 ------
+
+
+
+
+
+### [Multi-step process with no access control on one step](https://portswigger.net/web-security/access-control/lab-multi-step-process-with-no-access-control-on-one-step)
+
+Goal : log in using the credentials `wiener:peter` and exploit the flawed access controls to promote yourself to become an administrator.
+
+- go to `/login` , login with your admin credentials `administrator:admin`.
+- go to the admin panel and upgrade `carlos` to admin , and confirm  then logout
+- notice the requests and responses from burp history
+- login with your credentials `wiener : peter`.
+- send the request to burp repeater
+- if you try to upgrade your account , you will get `401 Unauthorized` , so this step requires admin privileges
+
+![](./access-control_img/9_1.png)
+
+
+
+- however if you send the confirmation request , you will get `200 OK ` , so this step has flawed access control and you are an admin 
+
+
+
+ 
+
+------
+
+
+
+
+
+### [Referer-based access control](https://portswigger.net/web-security/access-control/lab-referer-based-access-control)
+
+Goal : log in using the credentials `wiener:peter` and exploit the flawed access controls to promote yourself to become an administrator.
+
+- go to `/login` , login with your admin credentials `administrator:admin`.
+- go to the admin panel and upgrade `carlos` to admin , and logout
+- notice the requests and responses from burp history
+- login with your credentials `wiener : peter`
+- send the request to burp repeater
+- try to send request after changing username to `wiener` , you will get `401` because the `referer header` is required
+- copy the `referer header` from pervious request when you logged in as an administrator
+- send the request and you will be an admin
+
+
+
+![](./access-control_img/10_1.png)
