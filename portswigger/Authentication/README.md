@@ -125,3 +125,151 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 
 
 ------
+
+
+
+
+
+
+
+### [Username enumeration via response timing](https://portswigger.net/web-security/authentication/password-based/lab-username-enumeration-via-response-timing)
+
+**Goal** :  login into the website by brute-force usernames and passwords
+
+-  go to the login page, submit any credentials, intercept the request and send it to the intruder.
+-  select the value of username and click `add §`
+-  you will notice that only the first 3 requests give `Invalid username or password.` and the other gives `You have made too many incorrect login attempts. Please try again in 30 minute(s).` , that means the web application blocks you after 3 wrong credential attempts 
+
+![](./auth_img/auth3_1.png)
+
+
+
+- You can bypass this by spoofing your IP with an `X-Forwarded-For` header 
+
+- You may notice that in the case of submitting your own username, the response time changes depending on the length of the password.
+
+- From the intruder, select the value of `X-Forwarded-For` as the first payload, the value of username as the second payload, and select `pitchfork` attack type.
+
+![](./auth_img/auth3_2.png)
+
+
+
+- From the options menu, set the payload type as `numbers` for the payload set 1, with a number range of 1–100 to change in each request
+
+![](./auth_img/auth3_3.png)
+
+
+
+
+
+- From the options menu, set the payload type as a `simple list` For payload set 2, load the [usernames ](https://portswigger.net/web-security/authentication/auth-lab-usernames) wordlist
+
+
+
+![](./auth_img/auth3_4.png)
+
+
+
+- Click `Start Attack`, then click Columns and select the Response received and Response completed options.
+- You will notice that the username `ag` response time is longer than the others. Note: the first request (request 0) has the largest response time is my own username (`wiener`), so ignore it.
+
+
+
+![](./auth_img/auth3_5.png)
+
+
+
+- Set the `username= ag` and load the [passwords](https://portswigger.net/web-security/authentication/auth-lab-passwords) wordlist . 
+
+![](./auth_img/auth3_6.png)
+
+
+
+
+
+![](./auth_img/auth3_7.png)
+
+
+
+- click `start attack` , all responses will give Invalid username or password except only one response will have 302 HTTP response status code which means that the username and password is correct 
+
+![](./auth_img/auth3_8.png)
+
+
+
+
+
+
+
+
+
+------
+
+
+
+
+
+
+
+### [Broken brute-force protection, IP block](https://portswigger.net/web-security/authentication/password-based/lab-broken-bruteforce-protection-ip-block)
+
+**Goal** :  login into the website by brute-force usernames and passwords
+
+-  go to the login page ,submit any credentials ,intercept the request and send it to the intruder
+-  select the value of username and click `add §`
+-  you will notice that when you enter : 
+   - nonexistent username ,it gives `Invalid username`
+   - wrong password for exist user , it gives `Incorrect password`
+   - more than 2 wrong attempts,  it gives `You have made too many incorrect login attempts. Please try again in 1 minute(s).`
+
+
+
+![](./auth_img/auth4_1.png)
+
+
+
+- so , you can bypass the block by entering 2 wrong credentials followed by 1 valid credentials (your own username and password)
+
+- create file contains your own username and your target username but repeat them 100 times
+
+- create file contains  [passwords](https://portswigger.net/web-security/authentication/auth-lab-passwords) wordlist and put your password before each one.
+  you can use this python script to generate the password file  
+
+  ```python
+  with open('password.txt') as f:
+      lines = f.readlines()
+  
+  f= open('password.txt', 'w')
+  for line in lines:
+      c = "\npeter".join(line.split('\n'))
+      f.write('\n'.join(c.split('\n')))
+      f.write('\n')
+  
+  f.close()
+  ```
+
+- configure the intruder , load the username and password files 
+
+
+
+![](./auth_img/auth4_2.png)
+
+
+
+![](./auth_img/auth4_3.png)
+
+
+
+![](./auth_img/auth4_4.png)
+
+- click `start attack` , only one response for `carlos` will have 302 HTTP response status code which means that the username and password is correct 
+
+
+
+![](./auth_img/auth4_5.png)
+
+
+
+
+
+------
