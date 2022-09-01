@@ -9,20 +9,20 @@
 -  go to the login page , submit any credentials , intercept the request, and send it to the intruder
 -  select the value of username and click `add §`
 
-![](./auth_img/auth1_3.png)
+<img src="./auth_img/auth1_3.png" style="zoom:90%;" />
 
 
 
 - from options menu , load the [usernames ](https://portswigger.net/web-security/authentication/auth-lab-usernames)wordlist . 
 - check the length of the response , you will notice that all similar lengths gives you invalid username except one with unique length gives you Incorrect password . this means that this user is exist (user enumeration)
 
-<img src="./auth_img/auth1_4.png" style="zoom:100%;" />
+<img src="./auth_img/auth1_4.png" style="zoom: 80%;" />
 
 
 
 - repeat these steps with value of password . load the [passwords](https://portswigger.net/web-security/authentication/auth-lab-passwords) wordlist and check the response lengths
 
-![](./auth_img/auth1_5.png)
+<img src="./auth_img/auth1_5.png" style="zoom:80%;" />
 
 
 
@@ -78,7 +78,7 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 - change the value of username to `carlos` and login with the new carlos 's password
   NOTE : you can delete the token from the request ,that means you can reset the password without any token
 
-![](./auth_img/auth10_1.png)
+<img src="./auth_img/auth10_1.png" style="zoom:85%;" />
 
 
 
@@ -98,23 +98,23 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 -  select the value of username ,password and click `add §`
 -  choose attack type `cluster bomb`  because now we have two payloads
 
-![](./auth_img/auth2_1.png)
+<img src="./auth_img/auth2_1.png" style="zoom:80%;" />
 
 
 
 - from options menu , load the [usernames ](https://portswigger.net/web-security/authentication/auth-lab-usernames) and  [passwords](https://portswigger.net/web-security/authentication/auth-lab-passwords) wordlists . 
 
-![](./auth_img/auth2_2.png)
+<img src="./auth_img/auth2_2.png" style="zoom:80%;" />
 
 
 
 
 
-<img src="./auth_img/auth2_3.png"  />
+<img src="./auth_img/auth2_3.png" style="zoom:80%;" />
 
 - All responses will give an `invalid username or password`, except only one response will have a `302` HTTP response status code, which means that the username and password are correct
 
-![](./auth_img/auth2_4.png)
+<img src="./auth_img/auth2_4.png" style="zoom:80%;" />
 
 
 
@@ -140,7 +140,7 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 -  select the value of username and click `add §`
 -  you will notice that only the first 3 requests give `Invalid username or password.` and the other gives `You have made too many incorrect login attempts. Please try again in 30 minute(s).` , that means the web application blocks you after 3 wrong credential attempts 
 
-![](./auth_img/auth3_1.png)
+<img src="./auth_img/auth3_1.png" style="zoom:80%;" />
 
 
 
@@ -150,13 +150,13 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 
 - From the intruder, select the value of `X-Forwarded-For` as the first payload, the value of username as the second payload, and select `pitchfork` attack type.
 
-![](./auth_img/auth3_2.png)
+<img src="./auth_img/auth3_2.png" style="zoom:80%;" />
 
 
 
 - From the options menu, set the payload type as `numbers` for the payload set 1, with a number range of 1–100 to change in each request
 
-![](./auth_img/auth3_3.png)
+<img src="./auth_img/auth3_3.png" style="zoom:80%;" />
 
 
 
@@ -166,7 +166,7 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 
 
 
-![](./auth_img/auth3_4.png)
+<img src="./auth_img/auth3_4.png" style="zoom:80%;" />
 
 
 
@@ -175,25 +175,25 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 
 
 
-![](./auth_img/auth3_5.png)
+<img src="./auth_img/auth3_5.png" style="zoom:80%;" />
 
 
 
 - Set the `username= ag` and load the [passwords](https://portswigger.net/web-security/authentication/auth-lab-passwords) wordlist . 
 
-![](./auth_img/auth3_6.png)
+<img src="./auth_img/auth3_6.png" style="zoom:80%;" />
 
 
 
 
 
-![](./auth_img/auth3_7.png)
+<img src="./auth_img/auth3_7.png" style="zoom:80%;" />
 
 
 
 - click `start attack` , all responses will give Invalid username or password except only one response will have 302 HTTP response status code which means that the username and password is correct 
 
-![](./auth_img/auth3_8.png)
+<img src="./auth_img/auth3_8.png" style="zoom:80%;" />
 
 
 
@@ -224,7 +224,7 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 
 
 
-![](./auth_img/auth4_1.png)
+<img src="./auth_img/auth4_1.png" style="zoom:80%;" />
 
 
 
@@ -252,21 +252,21 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 
 
 
-![](./auth_img/auth4_2.png)
+<img src="./auth_img/auth4_2.png" style="zoom:80%;" />
 
 
 
-![](./auth_img/auth4_3.png)
+<img src="./auth_img/auth4_3.png" style="zoom:80%;" />
 
 
 
-![](./auth_img/auth4_4.png)
+<img src="./auth_img/auth4_4.png" style="zoom:80%;" />
 
 - click `start attack` , only one response for `carlos` will have 302 HTTP response status code which means that the username and password is correct 
 
 
 
-![](./auth_img/auth4_5.png)
+<img src="./auth_img/auth4_5.png" style="zoom:80%;" />
 
 
 
@@ -294,7 +294,7 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 -  from options menu , load the [usernames ](https://portswigger.net/web-security/authentication/auth-lab-usernames) and  [passwords](https://portswigger.net/web-security/authentication/auth-lab-passwords) wordlists . 
 -  responses give `Invalid username or password.` and after a lot of wrong attempts give `You have made too many incorrect login attempts. Please try again in 1 minute(s).` which means the username is valid but the account is locked 
 
-![](./auth_img/auth5_1.png)
+<img src="./auth_img/auth5_1.png" style="zoom:80%;" />
 
 
 
@@ -302,7 +302,7 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 
 
 
-![](./auth_img/auth5_2.png)
+<img src="./auth_img/auth5_2.png" style="zoom:80%;" />
 
 
 
@@ -310,7 +310,7 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 
 
 
-![](./auth_img/auth5_3.png)
+<img src="./auth_img/auth5_3.png" style="zoom:80%;" />
 
 
 
@@ -340,13 +340,13 @@ https://your-own.web-security-academy.net/forgot-password?temp-forgot-password-t
 
 - brute-force the security code with burp intruder
 
-![](./auth_img/auth7_2.png)
+<img src="./auth_img/auth7_2.png" style="zoom:80%;" />
 
 
 
 
 
-![](./auth_img/auth7_3.png)
+<img src="./auth_img/auth7_3.png" style="zoom:80%;" />
 
 
 
@@ -364,7 +364,7 @@ for i in range(0,10000):
 - start the attack and you will get`302` response code 
 - Right-click on the response and select `Show response in browser`. Copy the URL and load it in the browser. The page loads and you are logged in as `carlos`
 
-![](./auth_img/auth7_4.png)
+<img src="./auth_img/auth7_4.png" style="zoom:80%;" />
 
 
 
