@@ -11,6 +11,12 @@
 - [Blind OS command injection with out-of-band data exfiltration](#blind-os-command-injection-with-out-of-band-data-exfiltration)
 
 
+
+------
+
+
+
+
 ### [OS command injection, simple case](https://portswigger.net/web-security/os-command-injection/lab-simple)
 
 Goal : execute the `whoami` command to determine the name of the current user.
