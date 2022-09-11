@@ -1,5 +1,24 @@
 
-## Access control vulnerabilities
+# Access control 
+
+
+
+### Table of Contents
+
+- [Unprotected admin functionality](#unprotected-admin-functionality)
+- [Unprotected admin functionality with unpredictable URL](#unprotected-admin-functionality-with-unpredictable-url)
+- [User role controlled by request parameter](#user-role-controlled-by-request-parameter)
+- [User role can be modified in user profile](#user-role-can-be-modified-in-user-profile)
+- [User ID controlled by request parameter](#user-id-controlled-by-request-parameter)
+- [User ID controlled by request parameter, with unpredictable user IDs](#user-id-controlled-by-request-parameter-with-unpredictable-user-ids)
+- [User ID controlled by request parameter with data leakage in redirect](#user-id-controlled-by-request-parameter-with-data-leakage-in-redirect)
+- [User ID controlled by request parameter with password disclosure](#user-id-controlled-by-request-parameter-with-password-disclosure)
+- [Insecure direct object references](#insecure-direct-object-references)
+- [Method-based access control can be circumvented](#method-based-access-control-can-be-circumvented)
+- [Multi-step process with no access control on one step](#multi-step-process-with-no-access-control-on-one-step)
+- [Referer-based access control](#referer-based-access-control)
+
+------
 
 
 
