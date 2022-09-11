@@ -7,7 +7,7 @@
 |  ID  | Topic                              |                    | Status |
 | :--: | ---------------------------------- | :----------------: | :----: |
 |      | **Server-side topics**             |                    |        |
-|  1   | Authentication                     | :heavy_check_mark: | 14/14  |
+|  1   | Authentication                     |                    | 13/14  |
 |  2   | Command injection                  | :heavy_check_mark: |  5/5   |
 |  3   | Business logic vulnerabilities     |                    | 10/11  |
 |  4   | Access control                     |                    | 12/13  |
