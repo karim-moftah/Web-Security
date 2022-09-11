@@ -2,6 +2,23 @@
 
 
 
+### Table of Contents
+
+- [Excessive trust in client-side controls](#excessive-trust-in-client-side-controls)
+- [High-level logic vulnerability](#high-level-logic-vulnerability)
+- [Inconsistent security controls](#inconsistent-security-controls)
+- [Flawed enforcement of business rules](#flawed-enforcement-of-business-rules)
+- [Low-level logic flaw](#low-level-logic-flaw)
+- [Inconsistent handling of exceptional input](#inconsistent-handling-of-exceptional-input)
+- [Weak isolation on dual-use endpoint](#weak-isolation-on-dual-use-endpoint)
+- [Insufficient workflow validation](#insufficient-workflow-validation)
+- [Authentication bypass via flawed state machine](#authentication-bypass-via-flawed-state-machine)
+- [Infinite money logic flaw](#infinite-money-logic-flaw)
+
+------
+
+
+
 ### [Excessive trust in client-side controls](https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-excessive-trust-in-client-side-controls)
 
 Goal : buy a "Lightweight l33t leather jacket".
