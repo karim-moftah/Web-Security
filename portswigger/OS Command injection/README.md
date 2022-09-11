@@ -2,18 +2,12 @@
 
 
 
-<<<<<<< HEAD
-[TOC]
-
 ## Table of Contents
 
 - [OS command injection, simple case](#os-command-injection-simple-case)
 
-=======
->>>>>>> 2494a36719c5d5dc5650e9687686e96c4b65e506
 
-
-## OS command injection, simple case
+### OS command injection, simple case
 
 Goal : execute the `whoami` command to determine the name of the current user.
 
@@ -175,7 +169,6 @@ Goal : execute the `whoami` command and exfiltrate the output via a DNS query to
 
 
 ------
-
 
 
 
