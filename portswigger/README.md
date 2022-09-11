@@ -10,7 +10,7 @@
 |  1   | Authentication                     | :heavy_check_mark: | 14/14  |
 |  2   | Command injection                  | :heavy_check_mark: |  5/5   |
 |  3   | Business logic vulnerabilities     |                    | 10/11  |
-|  4   | Access control                     | :heavy_check_mark: | 13/13  |
+|  4   | Access control                     |                    | 12/13  |
 |  5   | File upload vulnerabilities        | :heavy_check_mark: |  7/7   |
 |  6   | Server-side request forgery (SSRF) |                    |  5/7   |
 |      |                                    |                    |        |

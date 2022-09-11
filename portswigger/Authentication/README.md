@@ -1,4 +1,26 @@
-## Authentication vulnerabilities
+# Authentication 
+
+
+
+### Table of Contents
+
+- [Username enumeration via different responses](#username-enumeration-via-different-responses)
+- [2FA simple bypass](#2fa-simple-bypass)
+- [Password reset broken logic](#password-reset-broken-logic)
+- [Username enumeration via subtly different responses](#username-enumeration-via-subtly-different-responses)
+- [Username enumeration via response timing](#username-enumeration-via-response-timing)
+- [Broken brute-force protection, IP block](#broken-brute-force-protection-ip-block)
+- [Username enumeration via account lock](#username-enumeration-via-account-lock)
+- [2FA broken logic](#2fa-broken-logic)
+- [Brute-forcing a stay-logged-in cookie](#brute-forcing-a-stay-logged-in-cookie)
+- [Offline password cracking](#offline-password-cracking)
+- [Password reset poisoning via middleware](#password-reset-poisoning-via-middleware)
+- [Password brute-force via password change](#password-brute-force-via-password-change)
+- [Broken brute-force protection, multiple credentials per request](#Broken-brute-force-protection,-multiple-credentials-per-request)
+
+
+
+------
 
 
 
