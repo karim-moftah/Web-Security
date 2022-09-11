@@ -16,7 +16,7 @@
 - [Offline password cracking](#offline-password-cracking)
 - [Password reset poisoning via middleware](#password-reset-poisoning-via-middleware)
 - [Password brute-force via password change](#password-brute-force-via-password-change)
-- [Broken brute-force protection, multiple credentials per request](#Broken-brute--force-protection,-multiple-credentials-per-request)
+- [Broken brute-force protection, multiple credentials per request](#Broken-brute-force-protection-multiple-credentials-per-request)
 
 
 
@@ -625,7 +625,7 @@ Note :  the username is submitted as hidden input in the request.
 
 
 
-### [Broken brute-force protection, multiple credentials per request](https://portswigger.net/web-security/authentication/password-based/lab-broken-brute-force-protection-multiple-credentials-per-request)
+### [Broken brute-force protection multiple credentials per request](https://portswigger.net/web-security/authentication/password-based/lab-broken-brute-force-protection-multiple-credentials-per-request)
 
 
 
