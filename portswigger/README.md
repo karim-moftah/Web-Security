@@ -13,13 +13,6 @@
 |  4   | Access control                     |                    | 12/13  |
 |  5   | File upload vulnerabilities        | :heavy_check_mark: |  7/7   |
 |  6   | Server-side request forgery (SSRF) |                    |  5/7   |
-|      |                                    |                    |        |
-|      |                                    |                    |        |
-|      |                                    |                    |        |
-|      |                                    |                    |        |
-|      |                                    |                    |        |
-|      |                                    |                    |        |
-|      |                                    |                    |        |
 |      | **Advanced topics**                |                    |        |
 |  22  | OAuth authentication               |                    |  1/6   |
 |  23  | JWT attacks                        |                    |  3/8   |
