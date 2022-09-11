@@ -545,3 +545,140 @@ stay-logged-in=Y2FybG9zOjI2MzIzYzE2ZDVmNGRhYmZmM2JiMTM2ZjI0NjBhOTQz
 
 
 ------
+
+
+
+
+
+### [Password reset poisoning via middleware](https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-reset-poisoning-via-middleware)
+
+**Goal** : log in to Carlos's account.
+
+- go to the login page ,submit your valid credentials `wiener:peter`,intercept the request and send it to the repeater
+- you will notice that when you enter : 
+
+  - wrong credentials , it gives `Invalid username or password.`
+  - valid credentials , it redirects to ` /my-account`
+- logout and click forget password ,enter your username `peter` , go to **Email client** to get the password reset link
+- you know that the user `carlos` will carelessly click on any links in emails that he receives. So, you need to generate password reset link to him 
+- add  `X-Forwarded-Host:your-exploit-server.web-security-academy.net` header in `/forgot-password` and change username to `carlos`
+
+
+
+<img src="./auth_img/auth11_1.png" style="zoom:90%;" />
+
+
+
+- go to email client and check the logs, you will get carlos 's  reset password token
+
+```apl
+"GET /forgot-password?temp-forgot-password-token=aBgxUrhr46KRYNbPNoyBpCuRelpKui8x HTTP/1.1"
+```
+
+- enter new password and login with the new credentials
+
+
+
+------
+
+
+
+
+
+### [Password brute-force via password change](https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-brute-force-via-password-change)
+
+**Goal** : brute-force Carlos's account and access his "My account" page.
+
+- login with your credentials `wiener : peter`
+- try different entries in password change function
+- you will notice that when you enter : 
+
+
+- valid current password, but two different new passwords, the message says `New passwords do not match`.
+- wrong current password
+  - If the two entries for the new password match, the account is locked.
+  - if you enter two different new passwords, an error message says `Current password is incorrect`.
+
+- you can brute-force carlos's password if you enters a wrong `current password` with two different new passwords to get `Current password is incorrect`. till it changes to `New passwords do not match`.  which means that  a valid `current password` is submitted
+
+Note :  the username is submitted as hidden input in the request.
+
+<img src="./auth_img/auth12_1.png" style="zoom:80%;" />
+
+
+
+- go to burp intruder, select value of current password and load it with the  [passwords](https://portswigger.net/web-security/authentication/auth-lab-passwords) wordlist and check the response lengths
+
+<img src="./auth_img/auth12_2.png" style="zoom:80%;" />
+
+- all responses return`Current password is incorrect`  except one returns `New passwords do not match` which means that  you get carlos's password
+
+<img src="./auth_img/auth12_3.png" style="zoom:80%;" />
+
+
+
+
+
+------
+
+
+
+
+
+### [Broken brute-force protection, multiple credentials per request](https://portswigger.net/web-security/authentication/password-based/lab-broken-brute-force-protection-multiple-credentials-per-request)
+
+
+
+
+
+**Goal** :  login into `carlos` account by brute-force usernames and passwords
+
+-  go to the login page ,submit any credentials ,intercept the request and send it to the repeater
+-  you will notice that when you enter : 
+   - wrong credentials , it gives `Invalid username or password.`
+   - multiple wrong credentials , it gives `You have made too many incorrect login attempts. Please try again in 1 minute(s).`
+
+-  i tried for another username but it also gives `You have made too many incorrect login attempts. Please try again in 1 minute(s).` ,So it is not based on usernames but on something that identifies me as the same client.
+
+-  then i tried to add `X-Forwarded-For` header but no luck with it
+-  i noticed that the data submitted in JSON form
+
+<img src="./auth_img/auth6_0.png" style="zoom:90%;" />
+
+- i tried to submit multiple values of username and password like that but no thing changed
+
+```json
+"username":"carlos","password":"123123",
+"username":"carlos","password":"baseball",
+"username":"carlos","password":"abc123",
+"username":"carlos","password":"football",
+"username":"carlos","password":"monkey",
+"username":"carlos","password":"letmein",
+"username":"carlos","password":"dragon",
+```
+
+- finally i tried to submit `carlos` username with array of all passwords in JSON form and it gave `302` 
+
+you can use this python script to generate the array
+
+```python
+import json
+arr = []
+with open('password.txt') as file:
+    for i in file:
+        arr.append(i.rstrip())
+print(json.dumps(arr))
+file.close()
+```
+
+<img src="./auth_img/auth6_1.png" style="zoom:100%;" />
+
+- Right-click on the response and select `Show response in browser`. Copy the URL and load it in the browser. The page loads and you are logged in as `carlos`.
+
+
+
+
+
+
+
+------
