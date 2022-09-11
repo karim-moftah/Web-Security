@@ -1,10 +1,14 @@
-## OS command injection 
+# OS command injection 
 
 
 
-## Table of Contents
+### Table of Contents
 
 - [OS command injection, simple case](#os-command-injection-simple-case)
+- [Blind OS command injection with time delays](#blind-os-command-injection-with-time-delays)
+- [Blind OS command injection with output redirection](#blind-os-command-injection-with-output-redirection)
+- [Blind OS command injection with out-of-band interaction](#blind-os-command-injection-with-out-of-band-interaction)
+- [Blind OS command injection with out-of-band data exfiltration](#blind-os-command-injection-with-out-of-band-data-exfiltration)
 
 
 ### [OS command injection, simple case](https://portswigger.net/web-security/os-command-injection/lab-simple)
