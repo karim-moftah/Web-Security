@@ -1,4 +1,4 @@
-## OS command injection vulnerabilities
+## OS command injection 
 
 
 
@@ -7,15 +7,19 @@
 - [OS command injection, simple case](#os-command-injection-simple-case)
 
 
-### OS command injection, simple case
+### [OS command injection, simple case](https://portswigger.net/web-security/os-command-injection/lab-simple)
 
 Goal : execute the `whoami` command to determine the name of the current user.
 
 - intercept and modify a request that checks the stock level.
+
 - append `|whoami` or `;whoami` to the `storeId` parameter 
+
 - you can use this also`productId=1%26+whoami+%23&storeId=1` it's encoded with URL encoding (`productId=1& whoami #&storeId=1`)
+
 - check the name in the response
-- (https://portswigger.net/web-security/os-command-injection/lab-simple)
+
+  
 
 
 
