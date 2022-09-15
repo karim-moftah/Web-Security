@@ -21,13 +21,13 @@ Goal : modify your session token to gain access to the admin panel at `/admin`, 
 - login with your credentials `wiener : peter` 
 - notice that the cookies contain field called session and contain JWT token
 - if you decoded it , you would see that the token identifies you from your name
-- ![](.\jwt_img\1_1.png)
+- <img src=".\jwt_img\1_1.png" style="zoom:80%;" />
 
 
 
 - also you know that the token has 3 parts header , payload and signature . now we are interested in the payload part , you also need to know that it's just encoding in base64
 
-![](.\jwt_img\1_2.png)
+<img src=".\jwt_img\1_2.png" style="zoom:80%;" />
 
 
 
@@ -36,26 +36,26 @@ Goal : modify your session token to gain access to the admin panel at `/admin`, 
   eyJpc3MiOiJwb3J0c3dpZ2dlciIsInN1YiI6ImFkbWluIiwiZXhwIjoxNjYwNzYwNTIzfQ
   ```
 
-![](.\jwt_img\1_3.png)
+<img src=".\jwt_img\1_3.png" style="zoom:80%;" />
 
 
 
 - change the token in session field in cookies to the new token and refresh the page
 
-![](.\jwt_img\1_4.png)
+<img src=".\jwt_img\1_4.png" style="zoom:80%;" />
 
 
 
 - you will notice that your username will be admin but the if you go to `/admin` , you still don't have permissions , also notice that the message tells you should login as `administrator` 
 - so repeat the last step to generate new token with username `administrator` instead of `admin`
 
-![](.\jwt_img\1_5.png)
+<img src=".\jwt_img\1_5.png" style="zoom:80%;" />
 
 
 
 - set the session value to the new token ,refresh the page and now you can delete `carlos`'s account
 
-  ![](.\jwt_img\1_6.png)
+  <img src=".\jwt_img\1_6.png" style="zoom:80%;" />
 
 
 
@@ -79,7 +79,7 @@ Goal : modify your session token to gain access to the admin panel at `/admin`, 
 - make `alg` to `none` ( because in this lab we don't need to verify the signature ) and `sub` to `administartor`
 - you can modify the token directly from `json Web token` extension in Burpsuite
 
-![](.\jwt_img\2_1.png)
+<img src=".\jwt_img\2_1.png" style="zoom:80%;" />
 
 
 
@@ -125,13 +125,13 @@ hashcat -a 0 -m 16500 eyJraWQiOiJhYmQ2N2FmZC1iODA3LTQ3YjQtODNjNi0xMGUzYTY5NDAyMG
 
 - the secret key is `secret1`
 
-![](.\jwt_img\3_1.png)
+<img src=".\jwt_img\3_1.png" style="zoom:80%;" />
 
 
 
 - modify  the `sub` to `administartor` and write your secret key in the signature part
 
-![](.\jwt_img\3_2.png)
+<img src=".\jwt_img\3_2.png" style="zoom:80%;" />
 
 
 
@@ -164,7 +164,7 @@ Goal :  modify and sign a JWT that gives you access to the admin panel at `/admi
 
 
 
-![](.\jwt_img\4_1.png)
+<img src=".\jwt_img\4_1.png" style="zoom:80%;" />
 
 
 
@@ -173,7 +173,7 @@ Goal :  modify and sign a JWT that gives you access to the admin panel at `/admi
 - change the token in session field in cookies to the new token and refresh the page , you will have access to the admin panel and you can delete `carlos`'s account.
 - this is the generated token with `jwk` parameter
 
-![](.\jwt_img\4_2.png)
+<img src=".\jwt_img\4_2.png" style="zoom:80%;" />
 
 
 
@@ -208,14 +208,14 @@ Goal : forge a JWT that gives you access to the admin panel at `/admin`, then de
 - [Generate a new RSA key.](https://portswigger.net/web-security/jwt/working-with-jwts-in-burp-suite#adding-new-signing-keys)  ,right-click on the entry for the key that you just generated, then select **Copy Public Key as JWK**.
 - go to your exploit server , modify File from `/exploit` to `/.well-known/jwks.json` and paste your public key in the body
 
-![](.\jwt_img\5_1.png)
+<img src=".\jwt_img\5_1.png" style="zoom:80%;" />
 
 - Send a request containing a JWT to Burp Repeater.
 - modify the token's payload `sub` from `wiener`  to  `administrator`
 - modify `kid` with the new one 
 - add `jku` in the header with your exploit server link 
 
-<img src=".\jwt_img\5_2.png"  />
+<img src=".\jwt_img\5_2.png" style="zoom:80%;" />
 
 
 
@@ -224,7 +224,7 @@ Goal : forge a JWT that gives you access to the admin panel at `/admin`, then de
 - change the token in session field in cookies to the new token and refresh the page , you will have access to the admin panel and you can delete `carlos`'s account.
 - this is the generated token with `jku` parameter
 
-![](C:\Users\dell\Desktop\jwt_img\5_3.png)
+<img src=".\jwt_img\5_3.png" style="zoom:80%;" />
 
 
 
