@@ -12,7 +12,7 @@
 |  3   | Business logic vulnerabilities     | 10/11  |
 |  4   | Access control                     | 12/13  |
 |  5   | File upload vulnerabilities        |  6/7   |
-|  6   | Server-side request forgery (SSRF) |  5/7   |
+|  6   | Server-side request forgery (SSRF) |  6/7   |
 |      | **Advanced topics**                |        |
-|  7   | OAuth authentication               |  2/6   |
-|  8   | JWT attacks                        |  3/8   |
+|  7   | OAuth authentication               |  3/6   |
+|  8   | JWT attacks                        |  5/8   |

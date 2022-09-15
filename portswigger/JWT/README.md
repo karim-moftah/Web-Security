@@ -1,4 +1,18 @@
-## JWT
+# JWT
+
+
+
+### Table of Contents
+
+- [JWT authentication bypass via unverified signature](#JWT-authentication-bypass-via-unverified-signature)
+- [JWT authentication bypass via flawed signature verification](#JWT-authentication-bypass-via-flawed-signature-verification)
+- [JWT authentication bypass via weak signing key](#JWT-authentication-bypass-via-weak-signing-key)
+- [JWT authentication bypass via jwk header injection](#JWT-authentication-bypass-via-jwk-header-injection)
+- [JWT authentication bypass via jku header injection](#JWT-authentication-bypass-via-jku-header-injection)
+
+---
+
+
 
 ### [JWT authentication bypass via unverified signature](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-unverified-signature)
 
@@ -221,19 +235,4 @@ Goal : forge a JWT that gives you access to the admin panel at `/admin`, then de
 
 
 
-
-### [JWT authentication bypass via kid header path traversal](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-kid-header-path-traversal)
-
-Goal : forge a JWT that gives you access to the admin panel at `/admin`, then delete the user `carlos`.
-
-
-
-
-
-
-
-
-
-```
-```
 
