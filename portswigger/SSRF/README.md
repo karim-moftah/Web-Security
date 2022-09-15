@@ -1,4 +1,19 @@
-## SSRF vulnerabilities
+# SSRF 
+
+### Table of Contents
+
+- [Basic SSRF against the local server](#basic-ssrf-against-the-local-server)
+- [Basic SSRF against another back-end system](#basic-ssrf-against-another-back-end-system)
+- [SSRF with blacklist-based input filter](#ssrf-with-blacklist-based-input-filter)
+- [SSRF with filter bypass via open redirection vulnerability](#ssrf-with-filter-bypass-via-open-redirection-vulnerability)
+- [Blind SSRF with out-of-band detection](#blind-ssrf-with-out-of-band-detection)
+- [SSRF with whitelist-based input filter](#SSRF-with-whitelist-based-input-filter)
+
+
+
+
+
+---
 
 ### [Basic SSRF against the local server](https://portswigger.net/web-security/ssrf/lab-basic-ssrf-against-localhost)
 
@@ -80,7 +95,7 @@ Goal : change the stock check URL to access the admin interface at `http://local
 
 
 
-<img src="C:\Users\dell\Desktop\ssrf_img\3_1.png" style="zoom:80%;" />
+<img src=".\ssrf_img\3_1.png" style="zoom:80%;" />
 
 
 
@@ -90,46 +105,11 @@ Goal : change the stock check URL to access the admin interface at `http://local
 
   
 
-<img src="C:\Users\dell\Desktop\ssrf_img\3_2.png" style="zoom:80%;" />
+<img src=".\ssrf_img\3_2.png" style="zoom:80%;" />
 
 
 
 
-
-
-
----
-
-
-
-
-
-### [SSRF with whitelist-based input filter](https://portswigger.net/web-security/ssrf/lab-ssrf-with-whitelist-filter)
-
-Goal: change the stock check URL to access the admin interface at `http://localhost/admin` and delete the user `carlos`
-
-- Go to any product `/product?productId=1`
-- click "Check stock", intercept the request in Burp Suite, and send it to Burp Repeater.
-- Change the URL to `http://username@stock.weliketoshop.net/` and observe that this is accepted, indicating that the URL parser supports embedded credentials.
-- Append a `#` to the username and observe that the URL is now rejected.
-- bypass the block with Double-URL encode the `#` to `%2523` and observe the extremely suspicious "Internal Server Error" response, indicating that the server may have attempted to connect to "username".
-- change `username` to `localhost` and add `/admin`
-
-<img src=".\ssrf_img\4_1.png" style="zoom:60%;" />
-
-
-
-- delete `carlos`
-  ````bash
-  stockApi=http://localhost%2523@stock.weliketoshop.net/admin/delete?username=carlos
-  
-  // everything after http:// is the domain 
-  // %2523 is the double URL encoding of # to make any thing after it just an id (element)
-  // stock.weliketoshop.net mandatory to bypass the whitelist filter
-  // /admin/delete?username=carlos path that we want to visit
-  ````
-
-  
 
 
 
@@ -178,6 +158,59 @@ stockApi=/product/nextProduct?currentProductId=1%26path=http://192.168.0.12:8080
 ---
 
 
+
+
+
+### [Blind SSRF with out-of-band detection](https://portswigger.net/web-security/ssrf/blind/lab-out-of-band-detection)
+
+This site uses analytics software which fetches the URL specified in the Referer header when a product page is loaded.
+
+Goal: use this functionality to cause an HTTP request to the public Burp Collaborator server.
+
+- Go to any product `/product?productId=1`
+- intercept the request in Burp Suite, and send it to Burp Repeater.
+- go to the Burp menu and launch the [Burp Collaborator client](https://portswigger.net/burp/documentation/desktop/tools/collaborator-client).
+- Click "Copy to clipboard" to copy a unique Burp Collaborator payload to your clipboard. Leave the Burp Collaborator client window open.
+- 
+- Change the `Referer` header to use the generated Burp Collaborator domain in place of the original domain. Send the request.
+- Go back to the Burp Collaborator client window, and click "Poll now". 
+- You should see some DNS and HTTP interactions that were initiated by the application as the result of your payload.
+
+<img src=".\ssrf_img\6_1.png" style="zoom:90%;" />
+
+
+
+---
+
+
+
+### [SSRF with whitelist-based input filter](https://portswigger.net/web-security/ssrf/lab-ssrf-with-whitelist-filter)
+
+Goal: change the stock check URL to access the admin interface at `http://localhost/admin` and delete the user `carlos`
+
+- Go to any product `/product?productId=1`
+- click "Check stock", intercept the request in Burp Suite, and send it to Burp Repeater.
+- Change the URL to `http://username@stock.weliketoshop.net/` and observe that this is accepted, indicating that the URL parser supports embedded credentials.
+- Append a `#` to the username and observe that the URL is now rejected.
+- bypass the block with Double-URL encode the `#` to `%2523` and observe the extremely suspicious "Internal Server Error" response, indicating that the server may have attempted to connect to "username".
+- change `username` to `localhost` and add `/admin`
+
+<img src=".\ssrf_img\4_1.png" style="zoom:60%;" />
+
+
+
+- delete `carlos`
+
+  ````bash
+  stockApi=http://localhost%2523@stock.weliketoshop.net/admin/delete?username=carlos
+  
+  // everything after http:// is the domain 
+  // %2523 is the double URL encoding of # to make any thing after it just an id (element)
+  // stock.weliketoshop.net mandatory to bypass the whitelist filter
+  // /admin/delete?username=carlos path that we want to visit
+  ````
+
+  
 
 
 
