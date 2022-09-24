@@ -1,5 +1,15 @@
 # CORS
 
+## Table of Contents
+
+- [CORS vulnerability with basic origin reflection](#cors-vulnerability-with-basic-origin-reflection)
+- [CORS vulnerability with trusted null origin](#cors-vulnerability-with-trusted-null-origin)
+- [CORS vulnerability with trusted insecure protocols](#cors-vulnerability-with-trusted-insecure-protocols)
+
+---
+
+
+
 ### [CORS vulnerability with basic origin reflection](https://portswigger.net/web-security/cors/lab-basic-origin-reflection-attack)
 
 Goal : craft some JavaScript that uses CORS to retrieve the administrator's API key and upload the code to your exploit server.
@@ -116,7 +126,7 @@ Goal: craft some JavaScript that uses CORS to retrieve the administrator's API k
 
 - Send the request to Burp Repeater, and resubmit it with the added header:
 
-  ```json
+  ```
   Origin: test.com 
   OR
   Origin: null
