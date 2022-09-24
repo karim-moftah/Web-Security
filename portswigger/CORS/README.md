@@ -1,6 +1,6 @@
 # CORS
 
-## Table of Contents
+### Table of Contents
 
 - [CORS vulnerability with basic origin reflection](#cors-vulnerability-with-basic-origin-reflection)
 - [CORS vulnerability with trusted null origin](#cors-vulnerability-with-trusted-null-origin)
