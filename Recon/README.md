@@ -15,7 +15,7 @@
 - [subfinder](https://github.com/projectdiscovery/subfinder)
 
   ```bash
-  subfinder -d 
+  subfinder -d <domain> 
   ```
 
 - [assetfinder](https://github.com/tomnomnom/assetfinder)
@@ -93,7 +93,6 @@
 - [RustScan](https://github.com/RustScan/RustScan)
 
 
-
 ### Directory Scanning
 
 - [dirsearch](https://github.com/maurosoria/dirsearch)
@@ -123,7 +122,7 @@
 
 
 
-### life subdomains
+### live subdomains
 
 - httpx
 - httprobe
