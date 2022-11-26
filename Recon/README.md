@@ -93,6 +93,27 @@
 - [RustScan](https://github.com/RustScan/RustScan)
 
 
+
+### Mapping a network 
+
+- #### ping sweeping : determine which IP addresses in scope are assigned to a host 
+
+  - fping 
+
+    ```bash
+    fping -a -g IPrange 2> /dev/null
+    ```
+
+  - nmap
+
+    ```bash
+    nmap -sn IPrange
+    
+    sudo nmap --script broadcast-ping 192.168.0.*
+    ```
+
+    
+
 ### Directory Scanning
 
 - [dirsearch](https://github.com/maurosoria/dirsearch)
