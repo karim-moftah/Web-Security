@@ -2,6 +2,39 @@
 
 
 
+### WHOIS
+
+```bash
+whois <domain> or <ip>
+```
+
+- https://whois.domaintools.com/
+- https://who.is/
+
+
+
+### DNS recon
+
+```bash
+dnsrecon -d <domain>
+```
+
+- https://dnsdumpster.com/
+
+
+
+### Website technology fingerprinting
+
+```bash
+whatweb <domain>
+```
+
+- webalizer extension
+- builtwith extension
+- netcraft.com
+
+
+
 ### Subdomain enumeration tools
 
 ####  github tools
@@ -32,6 +65,7 @@
 
   ```bash
   amass intel -d <domain>
+  amass intel -active -whois -d <domain> -dir /home/kali/target
   amass intel -org uber
   amass intel -ip -src -cidr 104.154.0.0/15
   amass intel -asn 63086
@@ -39,6 +73,8 @@
   amass enum –list
   amass enum -passive -d <domain>
   amass enum -active -d <domain>
+  amass enum -passive -d <domain> -dir /home/kali/target	 
+  amass enum -d <domain> -ip -brute -dir /home/kali/target  
   ```
 
 - [Findomain](https://github.com/Findomain/Findomain)
@@ -117,8 +153,19 @@
 ### Directory Scanning
 
 - [dirsearch](https://github.com/maurosoria/dirsearch)
+
 - dirb
+
 - gobuster
+  ```
+  gobuster dir -u http://ip -w wordlist -b 403,404 -x .php,.xml,.txt -r 
+  -b exclude 403,404 response codes 
+  -x find files with specific extensions
+  -r follow redirect
+  ```
+
+  
+
 - [ffuf](https://github.com/ffuf/ffuf)
 
 
@@ -194,9 +241,10 @@
 - [EyeWitness](https://github.com/FortyNorthSecurity/EyeWitness)
 
   ```bash
-  ./EyeWitness -f urls.txt --web
+  ./EyeWitness -f urls.txt --web -d targetname
+  -d => save the output in a folder
   ```
-
+  
   
 
 ### s3 bucket
@@ -363,3 +411,16 @@ https://github.com/laluka/bypass-url-parser
 - https://bugbountyforum.com/tools/recon/
 
 - https://pentester.land/cheatsheets/2019/04/15/recon-resources.html
+
+
+
+
+
+
+
+
+
+
+
+
+
