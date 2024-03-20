@@ -363,6 +363,7 @@ whatweb <domain>
 - [Jhaddix Content_discovery_all.txt](https://gist.github.com/jhaddix/b80ea67d85c13206125806f0828f4d10)
 - https://wordlists.assetnote.io/
 - [skullsecurity](https://wiki.skullsecurity.org/index.php/Passwords)
+- [fuzzdb](https://github.com/tennc/fuzzdb/tree/master)
 
 
 ###  Identify
