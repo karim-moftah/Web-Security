@@ -4,21 +4,23 @@
 
 ## Table of Contents
 
-- [Passive API recon](#)
-- [Active API recon]
-- [Endpoint Analysis: Reverse Engineering an API]
-  - [1. Building a Collection in Postman with postman proxy]
-  - [2. Automatic Documentation with mitmweb ]
-- [API Authentication Attacks]
-  - [1. Password Brute-Force Attacks]
-  - [2. Password Spraying]
-  - [3. Token Analysis]
-  - [4. JWT Attacks]
-  - [Automating JWT attacks with JWT_Tool]
-- [API Authorization Attacks]
-  - [Broken Object Level Authorization (BOLA)]
+- [Passive API recon](#passive-api-recon)
+- [Active API recon](#active-api-recon)
+- [Endpoint Analysis: Reverse Engineering an API](#endpoint-analysis)
+  - [1. Building a Collection in Postman with postman proxy](#1-building-a-collection-in-postman-with-postman-proxy)
+  - [2. Automatic Documentation with mitmweb ](#2-automatic-documentation-with-mitmweb)
+- [API Authentication Attacks](#api-authentication-attacks)
+  - [1. Password Brute-Force Attacks](#1-password-brute-force-attacks)
+  - [2. Password Spraying](#2-password-spraying)
+  - [3. Token Analysis](#3-token-analysis)
+  - [4. JWT Attacks](#4-jwt-attacks)
+  - [Automating JWT attacks with JWT_Tool](#automating-jwt-attacks-with-jwt_tool)
+- [API Authorization Attacks](#api-authorization-attacks)
+  - [Broken Object Level Authorization (BOLA)](#broken-object-level-authorization-bola)
 
+<br />
 
+<br />
 
 ---
 
@@ -36,7 +38,7 @@
 - ext:php inurl:"api.php?action="
 - intitle:"index of" api_key OR "api key" OR apiKey -pool
 
-
+<br />
 
 
 
@@ -47,11 +49,11 @@
 - "content-type: application/xml"
 - "wp-json"
 
-
+<br />
 
 ### 3. **The Wayback Machine**
 
-
+<br />
 
 ---
 
@@ -67,7 +69,7 @@ nmap -p- 127.0.0.1
 nmap -sV --script=http-enum <target> -p 80,443,8000,8080
 ```
 
-
+<br />
 
 ### 2. amass
 
@@ -76,7 +78,7 @@ amass enum -active -d target.com | grep "api"
  amass enum -active -brute -w /usr/share/wordlists/API_superlist -d [target domain] -dir [directory name]  
 ```
 
-
+<br />
 
 ### 3. Directory bruteforce
 
@@ -85,7 +87,7 @@ gobuster
 dirb
 ```
 
-
+<br />
 
 ### 4. **Kiterunner**
 
@@ -98,7 +100,7 @@ $ kr scan HTTP://127.0.0.1 -w ~/api/wordlists/data/kiterunner/routes-large.kite
 $ kr brute <target> -w ~/api/wordlists/data/automated/nameofwordlist.txt
 ```
 
-
+<br /><br />
 
 ---
 
@@ -106,7 +108,7 @@ $ kr brute <target> -w ~/api/wordlists/data/automated/nameofwordlist.txt
 
 ### Reverse Engineering an API
 
-
+<br />
 
 ### 1. Building a Collection in Postman with postman proxy
 
@@ -114,7 +116,11 @@ In the instance where there is no documentation and no specification file, you w
 
 First, let's launch Postman.
 
+```bash
 $ postman
+```
+
+
 
 Next, create a Workspace to save your collections in. For this course, we will use the ACE workspace. 
 
@@ -122,13 +128,19 @@ To build your own collection in Postman with the Proxy, use the Capture Requests
 
 ![img](./assets/1.PNG)
 
+<br />
+
 In the Capture requests window, select Enable proxy. The port should match with the number that is set up in FoxyProxy (5555). Next, enable the Postman Proxy, add your target URL to the "URL must contain" field, and click the Start Capture button.
 
 ![img](./assets/2.PNG)
 
+<br />
+
 Open up your web browser, navigate to crAPI's landing page, and use FoxyProxy to enable the Postman option. Now you can meticulously use the web app as intended. Meticulous, because you want to capture every single bit of functionality available within the application. This means using all of the features of the target. Click on links, register for an account, sign in to the account, visit your profile, post comments in a forum, etc. Essentially click all the things, update information where you can, and explore the web app in its entirety. How thorough you use the web app will have a domino effect on what endpoints and requests you will later test. For example, if you were to perform the various actions of the web app, but forgot to test the community endpoints then you will have a blindspot in the API attack surface. 
 
 ![img](./assets/3.PNG)
+
+<br />
 
 For example, make sure to perform all of the actions on the my-profile page:
 
@@ -146,17 +158,25 @@ Also, use the crAPI MailHog server to get the most out of this app. The MailHog 
 
  
 
+<br />
+
 Once you have captured all of the features you can find with manual exploration then you will want to Stop the Proxy. Next, it is time to build the crAPI collection. First, create a new collection by selecting the new button (top left side of Postman) and then choose Collection.
 
 ![img](./assets/5.PNG)
+
+<br />
 
 Go ahead and rename the collection to **crAPI Proxy Collection**. Navigate back to the Proxy debug session and open up the Requests tab.
 
 ![img](./assets/6.PNG)
 
+<br />
+
 Select all of the requests that you captured and use the "add to Collection" link highlighted above. Select the crAPI Proxy Collection and organize the requests by Endpoints. With all of the captured requests added to the crAPI Proxy Collection, you can organize the collection by renaming all of the requests and grouping similar requests into folders. Before you get too far into this exercise, I would recommend checking out the automated documentation instructions below. 
 
+<br />
 
+<br />
 
 ## 2. Automatic Documentation with mitmweb 
 
@@ -174,9 +194,13 @@ $ mitmweb
 
 ![img](./assets/7.png)
 
+<br />
+
 This will create a proxy listener using port 8080. You can then open a browser and use FoxyProxy to proxy your browser to port 8080 using our Burp Suite option.
 
 ![img](./assets/8.png)
+
+<br />
 
 Once the proxy is set up, you can once again use the target web application as it was intended.
 
@@ -188,9 +212,13 @@ Every request that is created from your actions will be captured by the mitmweb 
 
  
 
+<br />
+
 Continue to explore the target web application until there is nothing left to do. Once you have exhausted what can be done with your target web app, return to the mitmweb web server and click **File > Save** to save the captured requests.
 
 ![img](./assets/10.png)
+
+<br />
 
 Selecting **Save** will create a file called flows. We can use the "flows" file to create our own API documentation. Using a great tool called mitmproxy2swagger, we will be able to transform our captured traffic into an Open API 3.0 YAML file that can be viewed in a browser and imported as a collection into Postman.
 
@@ -204,20 +232,24 @@ $sudo mitmproxy2swagger -i /Downloads/flows -o spec.yml -p http://crapi.apisec.a
 
 ![img](./assets/11.png)
 
+<br />
+
 After running this you will need to edit the spec.yml file to see if mitmproxy2swagger has ignored too many endpoints. Checking out spec.yml reveals that several endpoints were ignored and the title of the file can be updated. You can use Nano or another tool like Sublime to edit the spec.yml.
 
 ![img](./assets/12.PNG)
 
+<br />
+
 Update the YAML file so that "ignore:" is removed from the endpoints that you want to include. If you're are using Sublime, you can simply select all of the endpoints that you want to edit (hold CTRL while selecting) and then use (CTRL+Shift+L) to perform a simultaneous multi-line edit.
 ![img](./assets/13.PNG)
 
- 
+ <br />
 
 Make sure to **only remove "ignore:"**. Removing spacing or the "-" can result in the script failing to work. 
 
 ![img](./assets/14.PNG)
 
- 
+ <br />
 
 Note that the "title" has been updated to "crAPI Swagger" and that the endpoints no longer contain "ignore:". Once your docs look similar to the image above, make sure to run the script once more. This second run will correct the format and spacing. This time around you can add the "--examples" flag to enhance your API documentation.
 
@@ -231,13 +263,19 @@ $sudo mitmproxy2swagger -i /Downloads/flows -o spec.yml -p http://crapi.apisec.a
 
 ![img](./assets/15.png)
 
+<br />
+
 After running mitmproxy2swagger successfully a second time through, your reverse-engineered documentation should be ready. You can validate the documentation by visiting https://editor.swagger.io/ and by importing your spec file into the Swagger Editor. Use **File>Import file** and select your spec.yml file. If everything has gone as planned then you should see something like the image below. This is a pretty good indication of success, but to be sure we can also import this file as a Postman Collection that way we can prepare to attack the target API.
 
 ![img](./assets/16.png)
 
+<br />
+
  To import this file as a collection we will need to open Postman. At the top left of your Postman Workspace, you can click the "Import" button. Next, select the spec.yml file and import the collection.
 
 ![img](./assets/17.png)
+
+<br />
 
 Once you import the file you should see a relatively straightforward API collection that can be used to analyze the target API and exploit with future attacks.
 
@@ -245,7 +283,7 @@ Once you import the file you should see a relatively straightforward API collect
 
 With a collection prepared, you should now be ready to use the target API as it was designed. This will enable you to see the various endpoints and understand what is required to make successful requests. In the next module, we will begin working with the API and learn to analyze various requests and responses. 
 
-
+<br /><br />
 
 ---
 
@@ -278,7 +316,7 @@ $ wfuzz -d '{"email":"admin@email.com","password":"FUZZ"}' -H 'Content-Type: app
 
 The –hc option helps you filter out the responses you don’t want to see
 
-
+<br />
 
 ---
 
@@ -294,7 +332,7 @@ The second type includes more advanced passwords that relate directly to the tar
 
 The real key to password spraying is to maximize your user list. The more usernames you include, the higher your odds of compromising a user account with a bad password. Build a user list during your reconnaissance efforts or by discovering excessive data exposure vulnerabilities.
 
-
+<br />
 
 **to extract mails from response**
 
@@ -304,7 +342,7 @@ $grep -oe "[a-zA-Z0-9._]\+@[a-zA-Z]\+.[a-zA-Z]\+" response.json | sort -u
 
 
 
-
+<br />
 
 ---
 
@@ -316,19 +354,21 @@ In this section, we will take a look at the process that can be used with Burp S
 
 ![img](./assets/19.PNG)
 
+<br />
+
 Next, you will need to right-click on the request and forward it over to Sequencer. In Sequencer, we will be able to have Burp Suite send thousands of requests to the provider and perform an analysis of the tokens received in response. This analysis could demonstrate that a weak token creation process is in use.
 
 Navigate to the Sequencer tab and select the request that you forwarded. Here we can use the Live Capture to interact with the target and get live tokens back in a response to be analyzed. To make this process work, you will need to define the custom location of the token within the response. Select the Configure button to the right of Custom Location. Highlight the token found within quotations and click OK.
 
 ![img](./assets/20.PNG)
 
-
+<br />
 
 Once the token has been defined then you can Start live capture. At this point, you can either wait for the capture to process thousands of requests or use the Analyze now button to see results sooner.
 
 ![img](./assets/21.PNG)
 
-
+<br />
 
 Using Sequencer against crAPI shows that the tokens generated seem to have enough randomness and complexity to not be predictable. Just because your target sends you a seemingly complex token, does not mean that it is safe from token forgery. Sequencer is great at showing that some complex tokens are actually very predictable. If an API provider is generating tokens sequentially then even if the token were 20 plus characters long, it could be the case that many of the characters in the token do not actually change. Making it easy to predict and create our own valid tokens.
 
@@ -338,7 +378,7 @@ To see what an analysis of a poor token generation process looks like perform an
 
 If you use the Analyze Now button and let Sequencer run its analysis. Check out the Character-level analysis which reveals that the 12 alpha-numeric token uses the same characters for the first 8 positions. The final three characters of these tokens have some variation. Taking note of the final three characters of these tokens you can notice that the possibilities consist of two lower-case letters followed by a number (aa#). With this information, you could brute-force all of the possibilities in under 7,000 requests. Then you can take these tokens and make requests to an endpoint like */identity/api/v2/user/dashboard.* Based on the results of your requests, search through the usernames and emails to find users that you would like to attack.
 
-
+<br />
 
 ---
 
@@ -348,19 +388,25 @@ JSON Web Tokens (JWTs) are one of the most prevalent API token types because the
 
 JWTs consist of three parts, all of which are base64 encoded and separated by periods: the header, payload, and signature. JWT.io is a free web JWT debugger that you can use to check out these tokens. You can spot a JWT because they consist of three periods and begin with "ey". They begin with "ey" because that is what happens when you base64 encode a curly bracket followed by a quote, which is the way that a decoded JWT always begins. 
 
-
+<br />
 
 You could use this token in requests to gain access to the API as the user specified in the payload. More commonly, though, you’ll obtain a JWT by authenticating to an API and the provider will respond with a JWT. In order to obtain a JWT from crAPI, we will need to leverage our authentication request.
 
 ![img](./assets/23.PNG)
 
+<br />
+
 The token we receive back from crAPI doesn't necessarily say "JWT: anywhere, but we can easily spot the "ey" and three segments separated by periods. The first step to attacking a JWT is to decode and analyze it. If we take this token and add it to the JWT debugger this is what we see.
 
 ![img](./assets/24.PNG)
 
+<br />
+
 In this example, we can see the algorithm is set to HS512, the email of our account, iat, exp, and the current signature is invalid. If we were able to compromise the signature secret then we should be able to sign our own JWT and potentially gain access to any valid user's account. Next, we will learn how to use automated tooling to help us with various JWT attacks.
 
+<br />
 
+----
 
 ### Automating JWT attacks with JWT_Tool
 
@@ -379,7 +425,7 @@ As you can see, jwt_tool makes the header and payload values nice and clear. Add
 $ jwt_tool -t http://target-name.com/ -rh "Authorization: Bearer JWT_Token" -M pb
 ```
 
-
+<br />
 
 In the case of crAPI we will run:
 
@@ -387,17 +433,19 @@ In the case of crAPI we will run:
 $jwt_tool -t http://127.0.0.1:8888/identity/api/v2/user/dashboard -rh "Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VyYWFhQGVtYWlsLmNvbSIsImlhdCI6MTY1ODUwNjQ0NiwiZXhwIjoxNjU4NTkyODQ2fQ.BLMqSjLZQ9P2cxcUP5UCAmFKVMjxhlB4uVeIu2__6zoJCJoFnDqTqKxGfrMcq1lMW97HxBVDnYNC7eC-pl0XYQ" -M pb
 ```
 
-
+<br />
 
  ![img](./assets/26.PNG)
 
 During this scan for common misconfiguration, JWT_Tool tested the various claims found within the JWT (sub, iat, exp)
 
-
+<br />
 
 #### The None Attack
 
 If you ever come across a JWT using "none" as its algorithm, you’ve found an easy win. After decoding the token, you should be able to clearly see the header, payload, and signature. From here, you can alter the information contained in the payload to be whatever you’d like. For example, you could change the username to something likely used by the provider’s admin account (like root, admin, administrator, test, or adm), as shown here: { "username": "root", "iat": 1516239022 } Once you’ve edited the payload, use Burp Suite’s Decoder to encode the payload with base64; then insert it into the JWT. Importantly, since the algorithm is set to "none", any signature that was present can be removed. In other words, you can remove everything following the third period in the JWT. Send the JWT to the provider in a request and check whether you’ve gained unauthorized access to the API.
+
+<br />
 
 #### The Algorithm Switch Attack
 
@@ -415,7 +463,7 @@ A more likely scenario than the provider accepting no algorithm is that they acc
 $ jwt_tool eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VyYWFhQGVtYWlsLmNvbSIsImlhdCI6MTY1ODg1NTc0MCwiZXhwIjoxNjU4OTQyMTQwfQ._EcnSozcUnL5y9SFOgOVBMabx_UAr6Kg0Zym-LH_zyjReHrxU_ASrrR6OysLa6k7wpoBxN9vauhkYNHepOcrlA -X k -pk public-key-pem
 ```
 
-
+<br />
 
 #### JWT Crack Attack
 
@@ -429,7 +477,7 @@ $crunch 5 5 -o crAPIpw.txt
 
 ![img](./assets/27.PNG)
 
-
+<br />
 
 We can use this password file that contains all possible character combinations created for 5 character passwords against our crAPI token. To perform a JWT Crack attack using JWT_Tool, use the following command: 
 
@@ -437,19 +485,21 @@ We can use this password file that contains all possible character combinations 
 $ jwt_tool TOKEN -C -d wordlist.txt
 ```
 
-
+<br />
 
  The -C option indicates that you’ll be conducting a hash crack attack, and the -d option specifies the dictionary or wordlist you’ll be using against the hash. JWT_Tool will either return “CORRECT key!” for each value in the dictionary or indicate an unsuccessful attempt with “key not found in dictionary.”
 
 ![img](./assets/28.PNG)
 
-
+<br />
 
 Now that we have the correct secret key that is used to sign crAPI's tokens, we should be able can generate our own trusted tokens. To test out our new abilities, you can either create a second user account in crAPI or use an email that you have already discovered. I have created an account named "superadmin".
 
+<br />
+
 ![img](./assets/29.PNG)
 
-
+<br />
 
 You can add your user token to the JWT debugger, add the newly discovered secret, and update the "sub" claim to any email that has registered to crAPI.
 
@@ -457,13 +507,15 @@ You can add your user token to the JWT debugger, add the newly discovered secret
 
 
 
+<br />
+
 Use the token that you generated in the debugger and add it to your Postman Collection. Make a request to an endpoint that will prove your access such as GET /identity/api/v2/user/dashboard. 
 
 ![img](./assets/31.PNG)
 
 
 
-
+<br /><br />
 
 ---
 
@@ -479,7 +531,7 @@ RESTful APIs are stateless, so when a consumer authenticates to these APIs, no s
 
 Authorization weaknesses are present within the access control mechanisms of an API. An API consumer should only have access to the resources they are authorized to access. BOLA vulnerabilities occur when an API provider does not restrict access to access to resources. BFLA vulnerabilities are present when an API provider does not restrict the actions that can be used to manipulate the resources of other users. I like to think of these in terms of fintech APIs. BOLA is the ability for UserA to see UserB's bank account balance and BFLA is the ability to for UserA to transfer funds from UserB's account back to UserA.
 
-
+<br />
 
 ### Broken Object Level Authorization (BOLA)
 
@@ -494,6 +546,8 @@ When authorization controls are lacking or missing, UserA will be able to reques
 3. Missing or flawed access controls. In order to exploit this weakness, the API provider must not have access controls in place. This may seem obvious, but just because resource IDs are predictable, does not mean there is an authorization vulnerability present.
 
 The third item on the list is something that must be tested, while the first two are things that we can seek out in API documentation and within a collection of requests. Once you have the combination of these three ingredients then you should be able to exploit BOLA and gain unauthorized access to resources. 
+
+<br />
 
 #### Finding Resource IDs and Requests
 
@@ -517,7 +571,7 @@ Here are a few ideas for requests that could be good targets for an authorizatio
 
  ![img](./assets/32.PNG)
 
- 
+<br /> 
 
 #### Searching for BOLA
 
@@ -540,7 +594,7 @@ Now that we have a better idea of the purpose of the app, we should seek out req
 
 Note that the second request here is for public information. This request retrieves a specific request on the public crAPI forum. As far as BOLA goes, this request has the first two ingredients, but this request functions as designed by sharing public information with a group. So, no authorization is necessary for crAPI users to access this data.
 
- 
+ <br />
 
  #### Authorization Testing Strategy
 
@@ -556,7 +610,7 @@ You could also do this by using UserB's resources with a UserA token. In the cas
 
  ![img](./assets/33.PNG)
 
-
+<br />
 
 This request looks interesting from a BOLA perspective because it is a request for a location that is based on the complex-looking vehicle ID. As UserB, I've gone through the crAPI interface and registered a vehicle. I then used the "Refresh Location" button on the web app to trigger the above request.
 
@@ -564,21 +618,25 @@ This request looks interesting from a BOLA perspective because it is a request f
 
 
 
+<br />
+
 To make things easier for this attack capture the UserB request with Burp Suite. 
 
  ![img](./assets/35.PNG)
 
  
 
- 
+ <br />
 
  Next, perform the BOLA attack by replacing UserB's token with UserA's token and see if you can make a successful request. 
 
- 
+ <br />
 
 
 
-![img](./assets/36.png)
+![img](./assets/36.PNG)
+
+<br />
 
 Success! UserA's token is able to make a successful request and capture the GPS location of UserB's car along with their vehicleLocation ID and fullName.
 
@@ -594,13 +652,15 @@ In the GET request to the /community/api/v2/community/posts/recent, we discovere
 
  
 
- 
+ <br /><br />
 
- 
+----
 
-##  
 
- 
+
+### Reference
+
+- https://university.apisec.ai/products/api-penetration-testing
 
  
 
