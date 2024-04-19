@@ -19,7 +19,7 @@
   - [Broken Object Level Authorization (BOLA)](#broken-object-level-authorization-bola)
   - [Broken Function Level Authorization (BFLA)](#broken-function-level-authorization-bfla)
 - [Improper Assets Management](#improper-assets-management)
-- [Mass Assignment Attacks]
+- [Mass Assignment Attacks](#mass-assignment-attacks)
 
 <br />
 
