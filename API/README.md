@@ -17,8 +17,8 @@
   - [Automating JWT attacks with JWT_Tool](#automating-jwt-attacks-with-jwt_tool)
 - [API Authorization Attacks](#api-authorization-attacks)
   - [Broken Object Level Authorization (BOLA)](#broken-object-level-authorization-bola)
-  - [Broken Function Level Authorization (BFLA)]
-- Improper Assets Management
+  - [Broken Function Level Authorization (BFLA)](#broken-function-level-authorization-bfla)
+- [Improper Assets Management](#improper-assets-management)
 
 <br />
 
@@ -756,6 +756,8 @@ The discovery of non-production versions of an API might not be treated with the
 
 **If you haven’t done so already, build a crAPI Postman collection and obtain a valid token. See the Setup module for instructions.**
 
+ <br />
+
 #### Finding Improper Assets Management Vulnerabilities
 
 You can discover mass assignment vulnerabilities by finding interesting parameters in API documentation and then adding those parameters to requests. Look for parameters involved in user account properties, critical functions, and administrative actions. Intercepting API requests and responses could also reveal parameters worthy of testing. Additionally, you can guess parameters or fuzz them in API requests that accept user input. I recommend seeking out registration processes that allow you to create and/or edit account variables. 
@@ -820,7 +822,11 @@ Now we can start by fuzzing requests across the entire API for the presence of o
     ![img](./assets/54.PNG)
     Within 10,000 requests, you’ll receive a 200 response indicating your victory. Congrats, on taking this Improper Assets Management vulnerability to the next level! Since we got sidetracked with this interesting finding during unauthenticated testing, I recommend returning to the crAPI collection and performing the same tests as an authenticated user. 
 
+ <br />
 
+ <br />
+
+---
 
 ### Reference
 
