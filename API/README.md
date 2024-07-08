@@ -929,6 +929,8 @@ As with many other API attacks, we will start hunting for this vulnerability by 
 
 ![img](./assets/64.PNG)
 
+<br />
+
 After reviewing the crAPI collection, two requests stick out to me as interesting. 
 
 **POST /workshop/api/merchant/contact_mechanic**
@@ -941,33 +943,49 @@ Similar to authorization testing, I recommend creating a new collection just for
 
 ![img](./assets/65.PNG)
 
- You can update unresolved variables at the collection level or by selecting "Add new variable". In this case, add the base URL variable value and select the collection that this is relevant to.
+<br /> 
+
+You can update unresolved variables at the collection level or by selecting "Add new variable". In this case, add the base URL variable value and select the collection that this is relevant to.
 
 ![img](./assets/66.PNG)
+
+<br />
 
 Get a better understanding of the requests that you've targeted. Once again, use the API as it was intended. Sometimes the scope of an API security test can be so large that it helps to be reminded of the purpose of a single request. If it is not clear from the perspective of the API collection, then it can be helpful to return to the web app.
 
 ![img](./assets/67.PNG)
 
+<br />
+
 When we return to the web app and intercept the requests involved with the workshop, we see that the **POST /workshop/api/shop/orders** request is involved in the process used for purchasing products from the crAPI store. This request is even more interesting now that we know what an important role it plays for the target organization.  
 
 ![img](./assets/68.PNG)
+
+<br />
 
 Again, we can attempt to guess key values to use in this attack or use Param Miner. Try this out. Unfortunately, neither attempts come up interesting. Although we do not have documentation for crAPI, we can learn more about "product_id" in other requests. Another request that is involved in the workshop store is **GET /workshop/api/shop/products**.
 
 ![img](./assets/69.PNG)
 
+<br />
+
 Checking this request out reveals the full catalog of store products along with the product id, name, price, and image URL. If we could submit user data to products there would be a great opportunity to leverage a mass assignment attack. If we were able to submit data here we would be able to create our own products with our own prices. However, this request uses the GET method and is only for requesting data not altering it. Well, how do the crAPI administrators manage the products page? Perhaps they use PUT or POST to submit products to this endpoint and it wouldn't be the first time that we have discovered a BFLA vulnerability with this target. Always try to leverage vulnerability findings in other requests when testing a target organization. Chances are if the secure development practices of an organization fall short in one aspect of the application, they likely fall short in other areas.
 
 ![img](./assets/70.PNG)
+
+<br />
 
 Sending a POST request to /workshop/api/shop/products yields very interesting results! The API responds with suggested fields for a POST request, which is an indication that this request is vulnerable to BFLA. If we are able to submit requests to alter or create store products, then we will be able to confirm that it is also vulnerable to Mass Assignment.
 
 ![img](./assets/71.PNG)
 
+<br />
+
 The request to add our own product is successful! The API responds with Status 200 and the information that was submitted. We can also navigate to the web app to verify our results.
 
 ![img](./assets/72.PNG)
+
+<br />
 
 So, we can create our own product items, but how can we exploit this vulnerability to the next level? What if we were to make the price a negative number?![img](./assets/73.PNG)
 
