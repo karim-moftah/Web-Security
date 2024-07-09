@@ -963,6 +963,8 @@ When we return to the web app and intercept the requests involved with the works
 
 <br />
 
+<br />
+
 Again, we can attempt to guess key values to use in this attack or use Param Miner. Try this out. Unfortunately, neither attempts come up interesting. Although we do not have documentation for crAPI, we can learn more about "product_id" in other requests. Another request that is involved in the workshop store is **GET /workshop/api/shop/products**.
 
 ![img](./assets/69.PNG)
