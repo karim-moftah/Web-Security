@@ -437,64 +437,442 @@ You can also see the original research on ESI Injection by GoSecure parts [one](
 
 ## Language Evaluation
 
+### Language Evaluation Issues
+
+Language evaluation is a generic name we chose for vulnerabilities that include:
+
+- Double evaluation
+- Server Side Template Injections
+- Expression language injections
+
+
+
+All of them are caused by a user’s ability to force the target application server to execute arbitrary programmistic code. That code is however not in plain form, and it is always in the form of an Expression.
+
+These vulnerabilities were grouped together because of the similarity between them in terms of both detection and exploitation. Their root cause might be a bit different though.
+
+#### Template Engines
+
+Some web applications use template systems to enable dynamic content generation into their pages, similar to the previously mentioned server side includes. Consider the following pseudo code:
+
+```php
+$template->render("Hello ${user_name}")
+```
+
+The expression between `${}` is the Template Expression, which holds the user_name variable. We do not know the origin of user_name ; presumably it’s generated server side e.g., during login. Using the template engine, it is possible to dynamically print that user name on the login page.
+
+
+
+Now consider the following vulnerable pseudo code:
+
+```php
+$template->render("Hello $_GET['user_name']")
+```
+
+In such a case, the user could be able to inject the template expression independently. We now control what will be evaluated and most likely, user_name is the last thing of interest.
+
+Such issues are also called **double evaluation** since the programmistic code is being evaluated twice.
+
+Most popular languages which use templates in web development technologies are
+
+- PHP (Twig, Smarty)
+- Python (Flask, Jinja)
+- Java (Freemarker)
+
+
+
+Such kind of vulnerabilities is not only limited to template engines. In Java applications, some technologies have a similar purpose of generating dynamic content, for example:
+
+- OGNL (Object Graph Navigation Language) - frequently used in Apache Struts RCE exploits
+- EL (Expression Language) - generic dynamic expression set for java applications
+
+
+
+#### Detecting Template Injection
+
+Server side evaluation of client supplied expressions often leads to critical vulnerabilities, including Remote Code Execution.
+
+This type of vulnerabilities is, however, tricky in both detection and exploitation.
+
+A generic technique for the detection of template / expression language injection is to inject multiple template tags into the web application and observe if they were transformed in some way in the response.
+
+Keep in mind, that often the injected data might be reflected indirectly, for instance, on a different page than it was injected (e.g., invalid login names might be reflected in admin only accessible logs).
+
+You can follow a similar approach when looking for template / expression language injections to the one you use when testing an application for stored XSS vulnerabilities injecting a payload and looking for occurrences of it within the application.
+
+Most template expressions are similar to each other; they are all in curly braces like the below examples but not limited to):
+
+- {{expr}}
+- ${expr}
+- %{expr}
+- #{expr}
+- %25{expr}
+- {expr}
+
+
+
+#### Confirming Template Injection
+
+The best expressions to inject are simple mathematical equations like `${5*11111}` for instance.
+
+In such a case, you would look for the value 55555 in the response of your request. Finding it is a positive sign that server side evaluation possibly occurred. However, further confirmation is required to be sure that the code is executed on the server side and has access to sensitive data.
+
+If you are a user of Burp Suite Pro, you should get an extension named **J2EE Scan** which automatically adds tests for expression language injection. If you are using Burp Community or want to have your customized tool to detect such vulnerabilities, you can build your own list of payloads.
+
+Then, you can look for evaluated numbers (like 55555 or other custom, easily identified values ) in page responses. Another good idea could be to use Burp Intruder to test several payloads of that type, as it is likely that while, for example, `#{5*11111}` will work, `%{5*11111}`  may not.
+
+You can also use the following diagram to help you with profiling this type of vulnerability whether it is a template or expression language injection
+
+![](./assets/19.png)
 
 
 
 
 
+Further exploitation beyond forcing the application to perform mathematical calculations (which is not really a severe issue) relies heavily on the technology we are dealing with in each case.
+
+Thus, the first step after observing anomalies related to calculations or unusual handling of expressions in curly braces should be trying to identify the underlying technology.
+
+To better identify the technology, you can first:
+
+- Observe which is the generic technology of the application. If it is java (e.g. you see it uses .jsp extensions) then you can suspect it is
+  an expression language / OGNL
+- Use the diagram as it contain s popular behavior of template engines when handling expressions
+- Try to inject unclosed curly braces (be careful as there is a chance you might permanently disable the attacked webpage) this might provoke verbose error disclosing the underlying technology
+- Observe other verbose errors for technology names
+
+The last possibility of confirming an injection is to use expressions typical of a certain language. It might often require working with their documentation in order to reference interesting variables or call insecure methods.
+
+
+
+#### Exploiting Template Injection
+
+For example, if you are dealing with the PHP template engine called **Smarty**, the RCE payload can be as simple as the one liner below
+
+```php
+{php}echo `id`;{/php}
+```
+
+
+
+The Python engine **Mako** is also very straightforward , as we see below
+
+```python
+<%
+import os
+x=os.popen('id').read()
+%>
+${x}
+```
+
+
+
+In the case of the **Twig** PHP engine things are a bit more complex. You can grab your copy of
+
+Injecting `{{5*5}}` into the web form results in "25" being returned to the user.
+
+![](./assets/20.png)
 
 
 
 
 
+Apart from the aforementioned template injection vulnerability of unknown impact you can also observe an XSS vulnerability if you type in, for example
+
+```html
+{{<svg/onload=confirm(1)>}}
+```
+
+
+
+Trying to brute force object names could be an additional step; for example, Twig utilizes a known object named **{{_self}}** which is a reference to the current application instance)
+
+One of Twig’s `_self` ’s attributes is named env and contains other methods that can be called. You can find the source code on GitHub [here](https://github.com/twigphp/Twig/blob/e22fb8728b395b306a06785a3ae9b12f3fbc0294/lib/Twig/Environment.php)
+
+Let’s find any method that gives an output an d try to execute it. We can infer by the function name that the function "display" might provide some output.
+
+![](./assets/21.png)
 
 
 
 
 
+Indeed, it simply prints out an output given as an argument. If the function name is modified , there will be no output, so we can assume that the underlying engine is Twig because it executes this Twig specific function
+
+![](./assets/22.png)
 
 
 
 
 
+Further code analysis leads to line 860 in line **getFilter()**, where it is possible to execute the user defined function:
+
+![](./assets/23.png)
+
+Executing commands via the `getFilter` function must be done as follows:
+
+- Call **registerUndefinedFilterCallback** , which allows us to register any function as a filter callback
+- The filter callback is then called by invoking **_self.env**.
+
+By following that way, a payload is constructed:
+
+```php
+{{_self.env.registerUndefinedFilterCallback("system")}}{{_self.env.getFilter("whoami")}}
+```
+
+![](./assets/24.png)
+
+
+
+Since every template engine has its own functions and methods (and some of them are sandboxed as well), exploiting template injections is dependent on reading the source code and documentation. You can find many object names and methods there.
+
+For learning more about template injection, you can see the original research paper by James Kettle [here](https://www.blackhat.com/docs/us-15/materials/us-15-Kettle-Server-Side-Template-Injection-RCE-For-The-Modern-Web-App-wp.pdf)
 
 
 
 
 
+#### Expression Language
+
+When identifying expression language / OGNL injection, the steps are a bit different.
+
+First, Java applications are easily recognizable as they tend to:
+
+- Use common extensions like .jsp or .jsf
+- Throw stack traces on errors
+- Use known terms in headers like "Servlet"
+
+When confirming the EL/OGNL injection in Java, we must receive the calculation output first like `${5*5}`, which will be evaluated as 25. As a reminder, `${5*5}` is not the only expression of interest but also:
+
+- {5*5}
+- ${5*5}
+- #{5*5}
+- %{5*5}
+- %25{5*5}
 
 
 
+##### Expression Language Code Execution
+
+Let’s now try to achieve Remote Code Execution. There are two commonly used utilities in Java that allow OS command execution access
+
+```bash
+Java.lang.Runtime.getRuntime().exec(command)
+AND
+java.lang.ProcessBuilder(command, argument1, argument2).start()
+```
 
 
 
+for example:
+
+```bash
+Java.lang.Runtime.getRuntime().exec("id")
+OR
+{"".getClass().forName("java.lang.Runtime").getRuntime().exec("id")}
+```
 
 
 
+The result contains a process id, which means that most likely, a new process was spawned. However, obtaining the process output would be much more complicated and would require extending the expression multiple times.
+
+In such a scenario, we would rather go for an interactive reverse shell. In this case we confirm the existence of code execution by issuing curl , as follows:
+
+![](./assets/25.png)
 
 
 
+The request is received on a netcat listener.
+
+![](./assets/26.png)
 
 
 
+Curl itself is a very powerful tool. Once its accessibility is confirmed, it can be used, e.g., to transfer files to and from the victim machine.
+
+You can easily move a reverse shell and run it using the template injection RCE vulnerability.
 
 
 
+##### Extending EL Exploitation
+
+On web application environments, you can also try to enumerate server variables using the Expression Language Injection. Moreover, it might be possible to amend them resulting in, for example, authorization bypasses.
+
+Server variables usually have universal names like `${application}`, `${session}`, `${request}`. Burp Intruder can be utilized for injecting these and looking if interesting data is not returned in result (if the object is resolved).
 
 
 
+Below we can see what some sample variable names can look like they are all placed in their respective template curly braces):
+
+- applicationScope - global application variables
+- requestScope -  request variables
+- initParam - application initialization variables
+- sessionScope - session variables
+- param.X - parameter value where X is name of a http parameter
 
 
 
+Of course retrieving values of these parameters can be possible after casting them to string. So, exemplary extraction of sessionScope might look like the following:
+```
+${sessionScope.toString()}
+```
+
+Sample authorization bypass might be similar to the below statement:
+
+```php
+${pageContext.request.getSession().setAttribute("admin", true)}
+```
 
 
 
+Keep in mind that the application might utilize custom variables. That’s why using the Burp Intruder wordlist is suggested (even the filename list might do). It is possible to find variables named:
+
+- ${user}
+- ${password}
+- ${employee.firstName}
 
 
 
+Similarly to Template Injections, Expression Language injections might also require working with documentation. Often, some characters might be disallowed, or the expression length might be limited. Also, depending on the Expression Language version, some features might be on or off.
+
+
+
+Recommended reading
+
+- https://pentest-tools.com/blog/exploiting-ognl-injection-in-apache-struts
+
+
+
+---
 
 ## Attacking XSLT Engines
 
+### XSLT Purpose
+
+XSLT (eXtensible Stylesheet Language Transformations) is a language used in XML document transformations.
+
+It can also be referred to as XSL; d o not confuse them with excel files *.xls *.xlsx etc.
+
+The XML document can be transformed, or rather formatted using the XSL(T) document. The XSL document also has an xml like structure and defines how another xml file should be transformed.
+
+![](./assets/27.png)
+
+The output of the transformation can be anything, but most often, it is another xml or html-type file. XSL uses its built in functions and XPATH language to select and change parts of an XML document.
+
+
+
+#### XSLT Example
+
+We will use [w3schools.com online XSLT parser](https://www.w3schools.com/xml/tryxslt.asp?xmlfile=cdcatalog&xsltfile=cdcatalog_ex1) in order to better explain the transformation process at least its legitimate part!
+
+Here we can see the input XML code:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <cd>
+    <title>Empire Burlesque</title>
+    <artist>Bob Dylan</artist>
+    <country>USA</country>
+    <company>Columbia</company>
+    <price>10.90</price>
+    <year>1985</year>
+  </cd>
+</catalog>
+```
+
+
+
+And the second input is the XSLT code.
+
+```html
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:template match="/">
+  <html>
+  <body>
+    <h2>My CD Collection2</h2>
+    <table border="1">
+      <tr bgcolor="#9acd32">
+        <th>Title</th>
+        <th>Artist</th>
+      </tr>
+      <tr>
+        <td>.</td>
+        <td>.</td>
+      </tr>
+    </table>
+  </body>
+  </html>
+</xsl:template>
+</xsl:stylesheet>
+```
+
+
+
+The XSLT document is in XML format and starts with the specific xsl root node "xsl:stylesheet"
+
+```xml
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+</xsl:stylesheet>
+```
+
+
+
+"xsl:template" match="/" is a directive that means that this stylesheet should apply to any ("/") xml nodes.
+
+```xml
+<xsl:template match="/">
+</xsl:template>
+```
+
+
+
+Next, the transformation is defined.
+
+For any XML structure ("/"), the output will look like this code.
+
+```html
+  <html>
+  <body>
+    <h2>My CD Collection2</h2>
+    <table border="1">
+      <tr bgcolor="#9acd32">
+        <th>Title</th>
+        <th>Artist</th>
+      </tr>
+      <tr>
+        <td>.</td>
+        <td>.</td>
+      </tr>
+    </table>
+  </body>
+  </html>
+```
+
+
+
+
+
+You can also see other XSL directives. Those two use XPATH, which is a language used to traverse XML documents and find certain values. In this case, we use the value of (starting from the root node):
+
+```
+Catalog
+		cd
+			title
+```
+
+
+
+![](./assets/28.png)
+
+
+
+In the end, we receive an HTML table that contains values of the node "title". It is purposely doubled. Of course, any
+
+![](./assets/29.png)
 
 
 
@@ -502,8 +880,120 @@ You can also see the original research on ESI Injection by GoSecure parts [one](
 
 
 
+##### XSLT Usage
+
+XSL Transformations can often be met in web applications as standalone functionalities. Various software components often offer support for XSL; for example, Oracle Databases in select xmltransform statements or the already mentioned SSI engines
 
 
+
+#### Experimenting with XSLT Parser
+
+There are a few well known XSLT engines like Saxon or Xalan in different versions. Of course, there can be custom or experimental ones on the web too.
+
+For the sake of the experiment, we will use Saxon with XSLT 2.0. Currently, XSLT up to 3.0 is available. You may also encounter XSLT 1.0, but it’s the least interesting for a penetration tester due to very few built in functions. Saxon can be downloaded and installed only if you have java installed; thus, on our Ubuntu 16 we issue commands:
+
+```bash
+sudo apt-get install default-jdk
+sudo apt-get install libsaxonb-java
+```
+
+![](./assets/30.png)
+
+
+
+We can invoke the transformation by supplying both files as arguments to the parser; this can also be achieved by the web application . However, for simplicity let’s work on a raw parser. The output is the same as the one in the online converter.
+
+![](./assets/31.png)
+
+
+
+
+
+
+
+##### XSLT Engine Detection
+
+Now, let’s use the following code in the XSLT stylesheet named detection.xsl
+
+![](./assets/32.png)
+
+
+
+
+
+You can see the technical details about the parser have been disclosed.
+
+![](./assets/33.png)
+
+
+
+
+
+
+
+##### XSLT Documentation
+
+Based on the output of detection.xsl, we can check the documentation of the respective XSL versions in order to find interesting functions. For example, you can use the URLs below
+
+- https://www.w3.org/TR/xslt-10/
+- https://www.w3.org/TR/xslt20/
+- https://www.w3.org/TR/xslt-30/
+
+
+
+##### XSLT File Read
+
+Assuming we, as an attacker, control the XSL file, what can we do? For example, let’s take a look at the function "unparsed text"
+
+![](./assets/34.png)
+
+
+
+Below you can see an example file using the unparsed text function
+
+![](./assets/35.png)
+
+
+
+The result contains a /etc/passwd file.
+
+![](./assets/36.png)
+
+
+
+XSL:Include is another interesting function, which allows us to join another xsl stylesheet. The downside is, it has to be a valid XSL document. Upside: SSRF is still possible.
+
+![](./assets/37.png)
+
+
+
+##### XSLT SSRF
+
+We use the following XSL document:
+
+![](./assets/38.png)
+
+
+
+The netcat listener receives the request. We can recognize the victim java version in the User agent header.
+
+![](./assets/39.png)
+
+
+
+
+
+##### Extending XSLT Attacks
+
+Of course, in the real world, things might get more difficult. Some functions might be disallowed, but some might be left uncaught, so again working with documentation might help you to identify a severe vulnerability. Also, XSLT parsers may be vulnerable to XXE vulnerabilities in the same way as all other XML parsers.
+
+When responding to XSL:INCLUDE directives, you might also try to respond with XML that contains an XXE payload. Moreover, XSLT engines might be able to execute custom code, which results in RCE!
+
+
+
+
+
+----
 
 ## Labs
 
