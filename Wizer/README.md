@@ -3709,5 +3709,53 @@ app.listen(process.env.PORT, () => {
 <br />
 
 ```
+GET /api/profile?user=svc0
+```
+
+response:
+
+```json
+{
+  "error": "User not found",
+  "metadata": {
+    "query": "svc0",
+    "timestamp": 1754096475232,
+    "context": "fallback-user-lookup",
+    "note": "tracer:F0RWCQYHVwYHCQVUUgo="
+  }
+}
+```
+
+
+
+```json
+POST /api/internal-report
+
+{
+  "xSessionId": "c3ZjOjE3NTQwOTUyNjg="
+}
+```
+
+
+
+**Debugging Code:**
+
+```javascript
+function xorDecode(base64Str, key) {
+  const xorBuffer = Buffer.from(base64Str, "base64");
+  const decoded = [...xorBuffer].map((byte, i) =>
+    String.fromCharCode(byte ^ key.charCodeAt(i % key.length))
+  ).join("");
+  return decoded;
+}
+
+const XOR_KEY = crypto.createHash("md5").update("svc-telemetry").digest("hex").slice(0, 12);
+const encodedTracer = "F0RWCQYHVwYHCQVUUgo="; // from note.tracer
+
+const coreCredString = xorDecode(encodedTracer, XOR_KEY);
+const staticSessionToken = Buffer.from(coreCredString).toString("base64");
+
+console.log("coreCredString =", coreCredString);
+console.log("staticSessionToken =", staticSessionToken);
 ```
 
